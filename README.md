@@ -27,6 +27,12 @@ Load an existing supported query to edit it. Keeping its key updates that defini
 
 Complex definitions use a compatibility payload stored in Etch's loop registry. Keep Looper active for those definitions to execute correctly. No separate query registry or visitor-facing REST endpoint is added.
 
+## Deactivation and uninstall
+
+For the current release, keep Looper active while testing queries created with it. Removing Looper does not delete content, page layouts, or saved Etch queries. You lose its query builder, preview, and editing tools. Queries saved in Looper's special compatibility format can stop displaying results until their settings are converted to ordinary native Etch definitions. Its extra missing-Meta-Box-relationship safeguard is also removed.
+
+Ordinary native Etch queries keep working. Native-query testing confirmed the query features themselves do not require Looper's frontend processing, but **0.8.1 does not automatically migrate existing definitions**. Field and relationship providers still have their own dependencies. See [native runtime testing](docs/NATIVE-RUNTIME.md).
+
 ## Multisite
 
 Looper uses the current site's WordPress content and Etch loop registry. It can be activated per site or network-wide; network activation does not make queries global across sites. Site administrators still need the required capabilities. Query previews stay in the current site context, including user membership.

@@ -41,8 +41,14 @@
   <h2>Good to know</h2>
   <h3>Does Looper save the page?</h3>
   <p>Its actions update the editor session. Use Etch Save to persist those changes. Updating a shared definition changes every loop that references that definition.</p>
-  <h3>Do I need to keep Looper active?</h3>
-  <p>Yes, for complex definitions that use its compatibility integration. Their complete configuration is stored with the Etch query and expanded by Looper when used.</p>
+  <h3>What happens if I deactivate or uninstall Looper?</h3>
+  <p>For the current release, keep Looper active while testing queries you create with it. Removing it does not delete your content, page layouts, or saved Etch queries, but you lose:</p>
+  <ul>
+    <li>Looper's query builder, preview, and query-editing tools.</li>
+    <li>Support for queries saved in Looper's special format. Those loops may stop displaying results until their saved settings are converted to ordinary Etch queries.</li>
+    <li>Looper's extra check that stops relationship results when the required Meta Box Relationships extension is missing.</li>
+  </ul>
+  <p>Ordinary native Etch queries continue working. Tests confirmed that the same query features can run without Looper after conversion, but the current release does not automatically convert existing queries. Keep any field or relationship plugins that supply your data active too. See the <a href="https://github.com/stphnwlkr/looper-for-etch/blob/main/docs/NATIVE-RUNTIME.md">native-query test results and current limitations</a>.</p>
   <h3>Can it edit every Etch loop?</h3>
   <p>It loads supported WordPress query definitions. JSON loops, dynamic-data arrays, custom PHP callbacks, and queries returning only IDs or counts stay outside the visual builder.</p>
   <h3>Does it work across a multisite network?</h3>
