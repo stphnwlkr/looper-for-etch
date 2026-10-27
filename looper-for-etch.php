@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Looper for Etch
  * Description: Content-aware visual query builder with PHP export and Etch Public API integration.
- * Version: 0.9.0
+ * Version: 0.10.0
  * Requires at least: 7.1
  * Requires PHP: 8.3
  * License: GPL-2.0-or-later
@@ -13,6 +13,7 @@
  * Text Domain: looper-for-etch
  */
 defined( 'ABSPATH' ) || exit;
+require_once __DIR__ . '/preferences.php';
 
 function lfe_version() {
     static $version;
@@ -30,9 +31,13 @@ function lfe_enqueue() {
     $base = plugin_dir_url( __FILE__ );
     wp_enqueue_style( 'lfe-host', $base . 'assets/host.css', array(), lfe_version() );
     wp_enqueue_script( 'lfe-query', $base . 'assets/query.js', array(), lfe_version(), true );
-    wp_enqueue_script( 'lfe-app', $base . 'assets/looper.js', array( 'lfe-query' ), lfe_version(), true );
-    wp_add_inline_script( 'lfe-app', 'window.looperConfig=' . wp_json_encode( array(
+    wp_enqueue_style( 'lfe-autocomplete', $base . 'assets/autocomplete.css', array(), lfe_version() );
+    wp_enqueue_script( 'lfe-autocomplete', $base . 'assets/autocomplete.js', array( 'lfe-query' ), lfe_version(), true );
+    wp_enqueue_script( 'lfe-app', $base . 'assets/looper.js', array( 'lfe-query', 'lfe-autocomplete' ), lfe_version(), true );
+    wp_add_inline_script( 'lfe-autocomplete', 'window.looperConfig=' . wp_json_encode( array(
         'version' => lfe_version(),
+        'autocomplete' => lfe_autocomplete_enabled(),
+        'directActions' => lfe_direct_actions_enabled(),
         'styles' => $base . 'assets/looper.css?ver=' . lfe_version(),
         'api' => rest_url( 'looper-for-etch/v1/' ),
         'nonce' => wp_create_nonce( 'wp_rest' ),

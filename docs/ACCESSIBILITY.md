@@ -13,3 +13,7 @@ The interface targets WCAG 2.2 AA using native inputs and labels, visible focus,
 - Help links identify that they open a new tab. Fixed value labels were removed. Unsupported argument controls are omitted rather than represented by misleading disabled actions.
 
 Automated DOM checks exclude geometry-dependent contrast and target measurements, which were sampled separately in the browser. This review does not establish complete WCAG conformance. A full assistive-technology, zoom, and device/browser matrix remains necessary before making a formal conformance claim. Etch and other installed extensions have their own accessibility behavior.
+
+## 0.10.0 prototype
+
+The autocomplete list and open Settings popover pass the semantic axe checks. Browser checks confirmed keyboard modifier insertion, nested loop suggestions, immediate preference toggles, and that opening Settings changes neither its button position nor the header height. Source/type controls share a row at the tested desktop width and stack in narrow containers. Selected suggestion text uses full-opacity white on cobalt blue. Full assistive-technology testing remains pending.

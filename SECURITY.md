@@ -11,3 +11,5 @@ The checksum detects a corrupted or mismatched download. It is not a signature i
 Looper does not decide which personal fields should be published. Site administrators must choose appropriate dynamic data for visitor-facing templates. Preview data remains in the authenticated administrator interface.
 
 Do not post sensitive security details in public issues. Use GitHub's private vulnerability reporting for this repository when available, or contact the maintainer through the GitHub profile to arrange a private report.
+
+Optional autocomplete uses the existing protected, bounded sample endpoint and never evaluates typed PHP/JavaScript. Its path reader excludes prototype properties and its editor insertions use native transactions. Builder preferences accept only known boolean flags and affect the current user's site-scoped meta keys. Direct actions are an opt-in UI preference; administrator authorization remains the server-side security boundary.

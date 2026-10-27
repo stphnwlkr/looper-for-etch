@@ -11,7 +11,8 @@
   shadow.append(sheet);
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
   const shell = el('section', 'shell'); shell.setAttribute('aria-labelledby', 'lfe-title'); shadow.append(shell);
-  let trigger, previousFocus;
+  const pendingPreferences=new Set();
+  let trigger, previousFocus, closeSettingsPopover=()=>{};
   if (admin) admin.append(host);
   else {
     document.body.append(host); host.hidden = true;
@@ -62,10 +63,10 @@
     if(toolbar&&!(trigger&&trigger.contains(event.target)))close(false);
   },true);
   function open() { if(busy)return; if(!savedLoopsLoading)loadSavedLoops(); previousFocus=document.activeElement; host.hidden=false; isolateBackground(); trigger?.setAttribute('aria-expanded','true'); render(); shadow.querySelector('button,input')?.focus(); }
-  function close(restoreFocus=true) { host.hidden=true; backgroundObserver?.disconnect(); backgroundState.forEach(([n,inert])=>{n.inert=inert;}); backgroundState=[]; if(!admin)document.body.style.overflow=bodyOverflow; trigger?.setAttribute('aria-expanded','false'); if(restoreFocus)(trigger||previousFocus)?.focus(); }
+  function close(restoreFocus=true) { closeSettingsPopover(false);host.hidden=true; backgroundObserver?.disconnect(); backgroundState.forEach(([n,inert])=>{n.inert=inert;}); backgroundState=[]; if(!admin)document.body.style.overflow=bodyOverflow; trigger?.setAttribute('aria-expanded','false'); if(restoreFocus)(trigger||previousFocus)?.focus(); }
   shadow.addEventListener('keydown',event=>{
     if(admin)return;
-    if(event.key==='Escape'){event.preventDefault();close();event.stopPropagation();}
+    if(event.key==='Escape'){event.preventDefault();if(shadow.querySelector('.settings-trigger[aria-expanded="true"]'))closeSettingsPopover(true);else close();event.stopPropagation();}
     if(event.key==='Tab'&&!document.querySelector('.settings-bar')){
       const nodes=[...shadow.querySelectorAll('button,input,select,textarea,summary,a[href],[tabindex="0"]')].filter(n=>!n.disabled&&!n.closest('[hidden],[inert]')&&n.getClientRects().length&&(!n.closest('details:not([open])')||n.tagName==='SUMMARY'));
       const first=nodes[0],last=nodes.at(-1),focused=shadow.activeElement;
@@ -150,7 +151,7 @@
     if(keyResetButton?.isConnected){keyResetButton.hidden=state.keyMode!=='manual';keyResetButton.textContent=state.savedKey?'Restore saved key':'Generate key';}
   }
   function queryIdentity(){
-    const identity=el('div','identity'),fields=el('div','grid');
+    const identity=el('div','identity'),fields=el('div','grid');identity.hidden=config.directActions!==true;
     const nameInput=input(state.name,v=>{state.name=v;changed();});nameInput.placeholder='Name this loop';fields.append(field('Loop name',nameInput));
     keyInput=input(state.key,v=>{state.keyMode='manual';state.key=v;changed();});keyInput.placeholder='Generated from name';keyInput.setAttribute('aria-describedby','lfe-key-help');fields.append(field('Loop key',keyInput));identity.append(fields);
     const info=el('div','key-info');keyHelp=el('p','hint key-help');keyHelp.id='lfe-key-help';
@@ -358,9 +359,9 @@
     }
     panel.append(list,...Object.values(panels));activate(activeAdvancedTab);
   }
-  function renderSourceOptions(form){
+  function renderSourceOptions(form,sourceRow){
     if(state.source==='wp-query'){
-      form.append(field('Content type',select(content.postTypes.map(t=>[t.name,t.label]),state.postType,async value=>{
+      sourceRow.append(field('Content type',select(content.postTypes.map(t=>[t.name,t.label]),state.postType,async value=>{
         const previous=state.postType;state.postType=value;const extra=state.advanced.find(row=>row.key==='post_type');if(extra&&Array.isArray(extra.value))extra.value=[value,...extra.value.filter(v=>v!==value&&v!==previous)];
         state.options.post_status={enabled:true,value:value==='attachment'?'inherit':'publish',parameter:false};state.attachmentMime='';state.attachmentParent={enabled:false,value:0,parameter:false};state.tax=[];state.meta=[];content=null;output=null;render();await loadContent();
       })));
@@ -396,16 +397,41 @@
   }
   let activeQueryTab='query',activeAdvancedTab='';
   function render() {
-    const previous=shadow.activeElement?.dataset.focusKey||pendingFocus;pendingFocus=previous;const scroll=viewport?.scrollTop||0;const details=new Set([...shadow.querySelectorAll('details[open]')].map(n=>n.dataset.section||n.querySelector('summary')?.textContent));
+    closeSettingsPopover(false);const previous=shadow.activeElement?.dataset.focusKey||pendingFocus;pendingFocus=previous;const scroll=viewport?.scrollTop||0;const details=new Set([...shadow.querySelectorAll('details[open]')].map(n=>n.dataset.section||n.querySelector('summary')?.textContent));
     shell.replaceChildren();
     const header = el('header'); const brand = el('div', 'brand'); const mark=el('span','mark','∞');mark.setAttribute('aria-hidden','true');const title=el('h1','','Looper for Etch');title.id='lfe-title';brand.append(mark,title);if(config.version){const version=el('span','version-pill','v'+config.version);version.setAttribute('aria-label','Version '+config.version);brand.append(version);}
     header.append(brand, el('span', 'badge', window.etch?.loops ? 'Etch connected' : 'Query builder'));
+    const settings=el('div','looper-settings'),settingsPanel=el('div','settings-panel');
+    settingsPanel.id='lfe-settings-panel';settingsPanel.setAttribute('role','dialog');settingsPanel.setAttribute('aria-label','Looper settings');settingsPanel.setAttribute('popover','auto');
+    const nativePopover=typeof settingsPanel.showPopover==='function';if(!nativePopover)settingsPanel.hidden=true;
+    const settingsTitle=button('Settings',()=>{
+      const rect=settingsTitle.getBoundingClientRect();settingsPanel.style.left=Math.max(8,Math.min(rect.right-340,window.innerWidth-348))+'px';settingsPanel.style.top=(rect.bottom+8)+'px';
+      if(!nativePopover){settingsPanel.hidden=!settingsPanel.hidden;settingsTitle.setAttribute('aria-expanded',String(!settingsPanel.hidden));}
+    },'quiet settings-trigger');
+    settingsTitle.setAttribute('aria-haspopup','dialog');settingsTitle.setAttribute('aria-expanded','false');settingsTitle.setAttribute('aria-controls',settingsPanel.id);
+    if(nativePopover){settingsTitle.setAttribute('popovertarget',settingsPanel.id);settingsTitle.setAttribute('popovertargetaction','toggle');settingsPanel.addEventListener('toggle',event=>settingsTitle.setAttribute('aria-expanded',String(event.newState==='open')));}
+    closeSettingsPopover=focus=>{if(nativePopover){try{settingsPanel.hidePopover();}catch(_){}}else settingsPanel.hidden=true;settingsTitle.setAttribute('aria-expanded','false');if(focus)settingsTitle.focus();};
+    settingsPanel.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeSettingsPopover(true);}});
+    function applyPreference(key,enabled){
+      config[key]=enabled;const control=shell.querySelector('[data-preference="'+key+'"]');if(control)control.checked=enabled;
+      if(key==='autocomplete')window.LooperAutocomplete?.setEnabled(enabled);
+      if(key==='directActions'){cancelNativeSave(false);const actions=shell.querySelector('.actions'),identity=shell.querySelector('.identity');if(actions)actions.hidden=!enabled;if(identity)identity.hidden=!enabled;if(saveButton?.isConnected)refreshActions();}
+    }
+    function setting(label,key,onMessage,offMessage){
+      const preference=check(label,config[key]===true,async enabled=>{
+        const checkbox=preference.querySelector('input'),before=config[key]===true;pendingPreferences.add(key);checkbox.disabled=true;applyPreference(key,enabled);
+        try{const result=await request('preferences',{[key]:enabled});applyPreference(key,result[key]===true);checkbox.checked=result[key]===true;notify(result[key]?onMessage:offMessage);}
+        catch(error){applyPreference(key,before);checkbox.checked=before;notify(error.message,true);}
+        finally{pendingPreferences.delete(key);checkbox.disabled=false;const current=shell.querySelector('[data-preference="'+key+'"]');if(current)current.disabled=false;}
+      });const checkbox=preference.querySelector('input');checkbox.setAttribute('aria-label',label);checkbox.dataset.preference=key;checkbox.disabled=pendingPreferences.has(key);return preference;
+    }
+    settingsPanel.append(setting('HTML loop field suggestions','autocomplete','Loop field suggestions enabled in the HTML editor.','Loop field suggestions disabled.'),el('p','hint','Experimental · Suggests sample fields and keys()/values() when you type {loopAlias. in the HTML editor. Empty or missing fields may not appear. Steps aside when another autocomplete menu is open.'),setting('Enable direct Etch actions','directActions','Direct Etch actions enabled.',''),el('p','hint','Show save/update, insert, and apply controls. Use Etch Save when ready. A save-and-reload confirmation saves all current editor changes first. Settings are saved for your user on this site.'));
+    settings.append(settingsTitle,settingsPanel);header.append(settings);
     startOverButton=button('Start over',startOver,'quiet');startOverButton.disabled=busy;header.append(startOverButton);
     if (!admin) header.append(button('Close', close, 'quiet'));
     shell.append(header);
     if (!content) { shell.append(el('p', 'loading', 'Reading site content…')); return; }
     const main = el('div', 'layout'), form = el('div', 'form'), aside = el('aside');viewport=main;aside.setAttribute('aria-label','Query output and preview');
-    const intro = el('div', 'intro'); intro.append(el('p', 'eyebrow', 'BUILD A LOOP'), el('h2', 'intro-title', 'Choose what repeats.'), el('p', 'muted', 'Start with your content. Add only the rules you need.')); form.append(intro);
     { // Saved-loop discovery works even before the editor API is ready.
       loopLoader=el('div','loop-loader');
       loopChooser=select([['','Choose an existing loop…']],selectedLoopId,v=>{selectedLoopId=v;refreshActions();});
@@ -419,14 +445,14 @@
     }
     migrateFormOptions();
     const identity=queryIdentity();
-    form.append(identity, field('Loop source', select([['wp-query','Posts, media, and custom post types'], ['wp-terms','Taxonomy terms'], ['wp-users','WordPress users'], ['main-query','Main Query · archive and search']], state.source, v => {
+    form.append(identity);const sourceRow=el('div','source-selection');form.append(sourceRow);sourceRow.append(field('Loop source', select([['wp-query','Posts, media, and custom post types'], ['wp-terms','Taxonomy terms'], ['wp-users','WordPress users'], ['main-query','Main Query · archive and search']], state.source, v => {
       const wasMain=state.source==='main-query',keyMode=state.keyMode,previousKey=state.key,savedKey=state.savedKey;state.source = v;state.advanced=[];state.dates=[];state.tax=[];state.meta=[];state.relationship.enabled=false;
       if(v==='main-query'){Object.values(state.options).forEach(o=>o.enabled=false);state.name='Archive or search results';state.key='archiveSearch';}
       else if(wasMain){state=Object.assign(Q.initial(),{source:v,postType:state.postType});if(state.postType==='attachment')state.options.post_status.value='inherit';}
       if (['Recent posts','Taxonomy terms','WordPress users'].includes(state.name)) { state.name = v === 'wp-terms' ? 'Taxonomy terms' : v==='wp-users'?'WordPress users':'Recent posts'; state.key = v === 'wp-terms' ? 'taxonomyTerms' : v==='wp-users'?'wordpressUsers':'recentPosts'; }
       state.keyMode=keyMode;state.savedKey=savedKey;if(keyMode!=='auto')state.key=previousKey;refreshKey();render();loadContent();
     })));
-    renderSourceOptions(form);
+    renderSourceOptions(form,sourceRow);
     const top = el('div', 'aside-title'); top.append(el('h2', '', 'Your loop'), el('span', 'live-dot', 'Live output')); aside.append(top);
     summary = el('p', 'query-summary'); aside.append(summary);
     const bar=el('div','code-bar');bar.append(el('span','code-label','PHP query arguments'),button('Copy for Etch',async event=>{
@@ -442,10 +468,9 @@
         const fallback=el('textarea','etch-copy-fallback');fallback.value=text;fallback.readOnly=true;fallback.setAttribute('aria-label','Query entries to copy into Etch');bar.after(fallback);fallback.focus();fallback.select();notify('Copy the selected entries with your keyboard, then paste inside Etch’s existing $query_args array.');
       }
     }));
-    aside.append(el('p','hint','Copy for Etch omits the $query_args assignment and outer brackets. Paste inside Etch’s existing array. Manual paste does not reload the editor.'));
-    code=el('pre','code');code.tabIndex=0;code.setAttribute('role','region'); code.setAttribute('aria-label', 'Generated query'); aside.append(bar, code);
+    code=el('pre','code');code.tabIndex=0;code.setAttribute('role','region'); code.setAttribute('aria-label', 'Generated query'); aside.append(bar, code, el('p','hint copy-instructions','Copy for Etch omits the $query_args assignment and outer brackets. Paste inside Etch’s existing array. Manual paste does not reload the editor.'));
     message = el('p', 'notice'); message.id='lfe-message';message.setAttribute('role', 'status');message.setAttribute('aria-atomic','true'); message.setAttribute('aria-live', 'polite'); aside.append(message);
-    const actions = el('div', 'actions');
+    const actions = el('div', 'actions');actions.hidden=config.directActions!==true;
     actionSelect = select([['definition','Save query in Loop Manager'],['create','Insert new loop element'],['bind','Apply query to selected loop']], actionMode, v => { cancelNativeSave(false);actionMode = v; refreshActions(); });
     saveButton = button('Add query to Loop Manager', () => addToEtch(actionMode), 'primary');
     actionHint=el('p','hint');actionHint.id='lfe-action-hint';saveButton.setAttribute('aria-describedby',actionHint.id);
@@ -465,7 +490,7 @@
     const refresh=state.postType!=='post'||state.source!=='wp-query';
     state=freshDraft();refreshKey();selectedLoopId='';actionMode='definition';activeQueryTab='query';activeAdvancedTab='';loadingLoop=false;loopChoicesSignature='';pendingFocus=null;
     if(refresh)content=null;render();if(viewport)viewport.scrollTop=0;if(refresh)await loadContent();
-    [...shadow.querySelectorAll('label')].find(n=>n.querySelector('span')?.textContent==='Loop name')?.querySelector('input')?.focus();
+    (config.directActions===true?[...shadow.querySelectorAll('label')].find(n=>n.querySelector('span')?.textContent==='Loop name')?.querySelector('input'):shell.querySelector('.source-selection select'))?.focus();
     if(message?.isConnected)notify('New query started. Saved Etch queries have not changed.');
   }
   function dateOptions(rows=state.dates||=[],holder=state,relationKey='dateRelation',depth=0,path=[]){
@@ -659,7 +684,7 @@
       if(JSON.stringify(state)!==before)throw Error('The form changed while the loop was loading. Load it again when you are ready to replace the form.');
       state={...next,keyMode:'saved',savedKey:next.key};content=discovered;actionMode='definition';activeQueryTab='query';activeAdvancedTab='';render();
       notify(apiLimitReason() || 'Loaded “'+state.name+'”. Edit the form, then use Update query in Loop Manager. Changing the key creates a separate definition.');
-      [...shadow.querySelectorAll('label')].find(n=>n.querySelector('span')?.textContent==='Loop name')?.querySelector('input')?.focus();
+      (config.directActions===true?[...shadow.querySelectorAll('label')].find(n=>n.querySelector('span')?.textContent==='Loop name')?.querySelector('input'):shell.querySelector('.source-selection select'))?.focus();
     }catch(error){if(generation===editorGeneration)notify(error.message,true);}
     finally{if(generation===editorGeneration){loadingLoop=false;refreshActions();}}
   }
@@ -755,7 +780,7 @@
     let runtimeMissing=false;try{runtimeMissing=!!existing&&!Object.hasOwn(api?.loops?.getAll?.()||{},existing[0]);}catch(_){runtimeMissing=true;}
     const same=!!(existing&&output&&sameDefinition({...existing[1],...currentDefinition()},existing[1]));
     const keyPending=state.keyMode==='auto'&&!savedLoopsLoaded&&!runtimeLoopsReady;
-    const enabled=!!output&&!keyPending&&!apiLimitReason()&&!busy&&!loadingLoop&&typeof api?.saveAsync==='function'&&api.environment?.capabilities?.loops!==false;
+    const enabled=config.directActions===true&&!!output&&!keyPending&&!apiLimitReason()&&!busy&&!loadingLoop&&typeof api?.saveAsync==='function'&&api.environment?.capabilities?.loops!==false;
     const labels={definition:existing?(same?'Query already in Loop Manager':'Update query in Loop Manager'):'Add query to Loop Manager',create:'Insert loop element',bind:'Apply to selected loop'};
     saveButton.textContent=busy?'Working…':labels[actionMode];
     saveButton.disabled=!!nativeSaveOperation||!enabled||runtimeMissing||(actionMode==='definition'&&same)||(actionMode==='create'&&typeof api?.blocks?.create!=='function')||(actionMode==='bind'&&(!!selectionProblem||typeof api?.loops?.setForBlock!=='function'));
@@ -799,7 +824,7 @@
   async function addToEtch(mode) {
     const api=window.etch;
     try {
-      if(busy)return;cancelNativeSave(false);refreshKey();
+      if(busy)return;if(config.directActions!==true)throw Error('Enable direct Etch actions in Settings before saving, inserting, or applying a query.');cancelNativeSave(false);refreshKey();
       const result=Q.compile(state);
       if(apiLimitReason())throw Error(apiLimitReason());
       if(!state.name.trim())throw Error('Enter a name and a key starting with a letter.');
@@ -870,7 +895,7 @@
     const copyKey=path=>{const text='{'+path+'}',b=button(text,async()=>{try{await navigator.clipboard.writeText(text);status.textContent='Copied '+text;}catch(_){const fallback=input(text,()=>{});fallback.readOnly=true;status.replaceChildren(el('span','','Select and copy this key: '),fallback);fallback.focus();fallback.select();}},'dynamic-key');b.setAttribute('aria-label','Copy '+text);return b;};
     function node(value,path,depth){
       const row=el('div','sample-node');if(value!==null&&typeof value==='object'){
-        const entries=Object.entries(value),details=el('details'),summary=el('summary','',path.replace(/^item\.?/,'')+' · '+(Array.isArray(value)?entries.length+' items':entries.length+' fields'));details.append(summary,copyKey(path));let drawn=false;
+        const entries=Object.entries(value),details=el('details'),summary=el('summary','',path.replace(/^item\.?/,'')+' · '+(Array.isArray(value)?entries.length+' items':entries.length+' fields'));details.append(summary,copyKey(path));if(!Array.isArray(value)){const modifiers=el('div','sample-modifiers');modifiers.append(el('span','hint','Object modifiers: '),copyKey(path+'.keys()'),copyKey(path+'.values()'));modifiers.querySelectorAll('button')[0].title='Copy an expression that returns this object’s field names as an array.';modifiers.querySelectorAll('button')[1].title='Copy an expression that returns this object’s field values as an array.';details.append(modifiers);}let drawn=false;
         details.addEventListener('toggle',()=>{if(!details.open||drawn)return;drawn=true;if(depth>12){details.append(el('p','hint','Deeper fields can be accessed using this parent path.'));return;}for(const[key,child]of entries)details.append(node(child,pathKey(path,key,Array.isArray(value)),depth+1));});row.append(details);
       }else{row.append(copyKey(path),el('span','sample-value',value===null?'null':String(value)===''?'(empty)':String(value).slice(0,180)));}return row;
     }

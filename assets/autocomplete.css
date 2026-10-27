@@ -1,0 +1,5 @@
+.lfe-completions{position:fixed;z-index:100050;width:320px;max-height:280px;overflow:auto;padding:5px;background:#232327;color:#f0f0f2;border:1px solid #929297;border-radius:7px;box-shadow:0 8px 28px #0006;font:13px/1.5 system-ui,sans-serif;overscroll-behavior:contain}
+.lfe-completions[hidden]{display:none!important}.lfe-completions-heading{font-size:12px;font-weight:600;padding:5px 9px;color:#cbd6ed;border-bottom:1px solid #55555a}.lfe-completion{display:flex;justify-content:space-between;gap:16px;min-height:30px;align-items:center;padding:4px 9px;cursor:pointer;border-radius:3px;overflow-wrap:anywhere}.lfe-completion[aria-selected=true]{background:#2F6FE4;color:#fff}.lfe-completion-type{font-size:11px;color:#c8cbd0;white-space:nowrap}.lfe-completions-empty{padding:9px}.lfe-autocomplete-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media(forced-colors:active){.lfe-completions{border:1px solid CanvasText;background:Canvas;color:CanvasText}.lfe-completion[aria-selected=true]{background:Highlight;color:HighlightText}}
+
+.lfe-completion[aria-selected=true] .lfe-completion-type{color:#fff}

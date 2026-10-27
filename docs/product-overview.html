@@ -2,68 +2,77 @@
   <header>
     <h1>Looper for Etch</h1>
     <p><strong>Choose your content. See the query.</strong></p>
-    <p>Build simple and complex WordPress queries inside Etch. Choose your content, combine filters, and inspect the generated PHP as you work.</p>
+    <p>Build simple and complex WordPress queries inside Etch, inspect the generated PHP, and explore the dynamic data available to your loop.</p>
     <p><a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/looper-for-etch.zip">Download plugin</a> · <a href="#changelog">Changelog</a></p>
-    <p>Visual controls · Visible PHP output · Saved in Etch</p>
+    <p>Visual query controls · Copy-first workflow · Native Etch queries</p>
   </header>
-  <h2>What the plugin does</h2>
-  <p>Looper is a visual query builder for EtchWP. Use it to choose the content your visitors see, from a simple list of recent posts to a query that combines taxonomy, meta, date, and relationship conditions. The generated PHP stays visible as you work, so you can see exactly what the controls produce. Copy for Etch copies only the entries inside the $query_args array for pasting into Etch’s existing array; manual paste does not reload the editor.</p>
-  <p>Looper handles the data query. You continue designing the repeated content in Etch, using your own elements, components, and dynamic data.</p>
+
+  <h2>What Looper does</h2>
+  <p>Looper helps you select, filter, and order the content your visitors see. Create a list of recent articles, filter media by an Etch Collection, combine taxonomy and metadata conditions, or configure an archive template's Main Query. The generated PHP stays visible as you work.</p>
+  <p>You still design the repeated content in Etch with your own elements, components, and dynamic expressions. Looper builds the query and helps you discover its data. It adds no query processing or assets for ordinary visitors.</p>
 
   <h2>Choose what repeats</h2>
-  <p>Build queries for posts and public custom post types, Media Library attachments, taxonomy terms, or WordPress users. Use Main Query for archive and search templates where the current URL supplies the query context. Attachment queries support file types, parent posts, and attachment taxonomies such as Etch Collections.</p>
-  <p>Set count, sorting, status, and offset, then add only the filters you need. Taxonomy filters include a term-name lookup. Meta filters work with stored keys and values, including manually entered keys. Date filters provide calendar pickers and relative dates.</p>
+  <p>Query posts and public custom post types, Media Library attachments, taxonomy terms, or WordPress users. Main Query supports archive and search templates where the current URL supplies the context. Attachment queries include MIME type, parent post, and attachment-taxonomy filters such as Etch Collections.</p>
+  <p>Start with count, sorting, status, and offset. Add taxonomy rules using term-name lookup, compare stored metadata, or choose date boundaries with calendar controls. More provides registered Meta Box relationship choices when that extension is available. Advanced contains additional content-selection, author, search, hierarchy, and pagination settings appropriate to the selected source.</p>
+  <p>Nested AND/OR groups express conditions such as articles in either of two categories that also have a rating above a threshold. Friendly labels include the real WordPress argument names in tooltips, and reference links explain the underlying options.</p>
+  <p>Mark a supported scalar option as an Argument to reuse a definition with different values. For example, <code>$count ?? 6</code> provides a default of six records while allowing another count when the loop is used. Lists use fixed values.</p>
 
-  <h2>Combine your filters</h2>
-  <p>Nested AND/OR groups let you express conditions such as “in either of these categories, with a rating above a threshold, and published within this date range.” Advanced adds selection, author, search, hierarchy, and pagination controls where the query source supports them. It stays focused on selecting, filtering, and ordering content rather than database tuning.</p>
-  <p>Mark a supported scalar option as an Argument to reuse a definition with different values. For example, <code>$count ?? 6</code> supplies a default of six records while allowing another count when the loop is used. List settings use explicit values.</p>
+  <h2>Copy first. Save when you are ready.</h2>
+  <p>Copy/paste is the default workflow. <strong>Copy for Etch</strong> copies only the entries inside <code>$query_args = [ ... ];</code>. It leaves out the PHP opening tag, assignment, and outer brackets, while preserving nested arrays. Paste those entries inside Etch's existing query-arguments array in Loop Manager, then save in Etch when ready. Manual paste does not require a page reload.</p>
+  <p>You can load a supported existing query, adjust its settings, and copy the revised arguments. Loading changes only Looper's form. Name and key fields stay hidden in copy-only mode because they are not needed for copying arguments.</p>
 
-  <h2>Preview the data. Copy the dynamic key.</h2>
-  <p>Run preview to inspect one matching record. Expand its fields and copy an Etch expression such as <code>{item.title}</code> directly into your loop's content. Preview uses the argument defaults entered in Looper. Main Query results need to be checked in the relevant archive or search template.</p>
-  <p>Load an existing supported query to edit it, save a definition into the Loop Manager, insert a new loop element, or apply the definition to the selected loop. Keeping a query's key updates that definition wherever it is referenced; changing the key creates another. Most actions update Etch without a reload; use <strong>Etch Save</strong> to keep those changes. If Etch’s editor API cannot accept all query settings, Looper offers <strong>Save changes and reload</strong> or <strong>Cancel</strong>. Confirming saves your current editor changes and native query before reloading. Review inserted or applied elements and use Etch Save afterward.</p>
+  <h2>Optional direct Etch actions</h2>
+  <p>Enable <strong>direct Etch actions</strong> in the Settings popover to reveal name/key fields and controls to save a query definition, insert a starter loop element, or apply a query to the exact selected loop element. These controls are off by default. Applying a query preserves the element's content, variable names, and argument overrides.</p>
+  <p>Keeping an existing key updates that definition wherever it is referenced; changing the key creates another definition. New keys use camelCase. Most direct actions update the editor without reloading, and you use Etch Save to persist them.</p>
+  <p>Some valid query shapes are rejected by Etch's public add/update API. Looper then offers <strong>Save changes and reload</strong> or <strong>Cancel</strong>. Confirming saves all current editor changes and the native query before reloading to refresh Etch's query list. Insert/apply actions continue afterward for review. Cancel leaves the form intact. You can use Copy for Etch instead to avoid that automatic save and reload.</p>
+
+  <h2>Inspect a sample and copy dynamic keys</h2>
+  <p>Run preview to inspect one matching record, using the argument defaults in the form. Expand its fields and copy an expression such as <code>{item.title}</code>. If your loop uses another alias, replace <code>item</code> with that alias.</p>
+  <p>Object controls also provide <code>.keys()</code> and <code>.values()</code> expressions, such as <code>{item.meta.keys()}</code>. These native Etch modifiers return arrays of field names or corresponding values for use in Etch.</p>
+  <p>The sample is not a complete database schema. It reflects the matching record, active field integrations, and Etch's dynamic-data filters, including your own cleanup filters. Main Query results must be checked in the matching archive or search context.</p>
+
+  <h2>Optional suggestions in the HTML editor</h2>
+  <p>Enable <strong>HTML loop field suggestions</strong> in Settings. Inside a loop aliased <code>article</code>, typing <code>{article.</code> lists available sample fields. Object choices drill down into nested data, and nested loops use the aliases available at that location. Objects also offer <code>keys()</code> and <code>values()</code>.</p>
+  <p>Use arrow keys to navigate, Enter to insert, and Escape to dismiss. Both Settings preferences belong to your user on the current site and take effect without saving or reloading the document. They are off by default.</p>
+  <p>Autocomplete is experimental and currently limited to the HTML editor. It uses one sample, so missing fields may not appear. Required arguments must be available, and Main Query suggestions are not supported yet. Looper steps aside when a native or Etch Enhancer completion menu is visible. You can disable suggestions independently of the query builder.</p>
 
   <h2>Get started</h2>
   <ol>
     <li>Install the release ZIP, activate Looper, and open its button in Etch's left toolbar.</li>
-    <li>Choose a source, name the query, and configure its options and filters.</li>
-    <li>Inspect the generated PHP and run a sample preview.</li>
-    <li>Choose the appropriate Etch action, then use Etch Save. If a reload is needed, review the save confirmation first.</li>
+    <li>Choose a source and content type, or load an existing supported query.</li>
+    <li>Configure the options and filters, inspect the PHP, and run a sample preview.</li>
+    <li>Use Copy for Etch, paste inside the existing query-arguments array, and save in Etch when ready.</li>
   </ol>
-  <h2>Requirements</h2>
-  <ul>
-    <li>WordPress 7.1 or later and PHP 8.3 or later.</li>
-    <li>Etch with its public Loop API for editor integration. Tested with Etch 1.7.1.</li>
-    <li>Administrator access or the manage_options capability. User previews also require list_users.</li>
-    <li>Meta Box Relationships only when building queries that use that integration.</li>
-  </ul>
-  <h2>Updates through WordPress</h2>
-  <p>Stable versions are published as GitHub releases and appear alongside your other WordPress plugin updates. Install them normally or opt into WordPress auto-updates. Your site does not need a GitHub token. Download the release asset named <code>looper-for-etch.zip</code>; GitHub's separate source archives are for development.</p>
+  <p>Open Settings if you want optional HTML suggestions or direct Etch actions. Other tools in Etch's left toolbar remain available and close Looper when selected.</p>
+
   <h2>Good to know</h2>
-  <h3>Will adding or updating a query reload the editor?</h3>
-  <p>Most queries update the editor without reloading; use Etch Save to keep your changes. Some valid WordPress query settings are rejected by Etch’s editor API. For those, Looper shows a Save changes and reload confirmation with a Cancel option. It saves all current editor changes only after you confirm, saves the native query, then reloads to keep the query list in sync. Review inserted or applied elements and use Etch Save afterward. Updating a shared query changes every loop that references it.</p>
   <h3>Do I need to keep Looper active?</h3>
-  <p>No. Once saved, your queries are ordinary Etch queries. They continue working if you deactivate or uninstall Looper. Your content, layouts, and saved queries stay in place, and you can still edit the queries in Etch's Loop Manager.</p>
-  <p>You lose Looper's visual query builder, sample-record preview, and dynamic-key copying tools. Looper adds no query processing for visitors. Keep Etch and any plugins that supply your fields, galleries, or relationships active; their features still depend on those plugins.</p>
-  <p>Upgrading from an older Looper version? Open WordPress admin or the Etch editor once with version 0.9.0 or later active. It converts older Looper query definitions automatically and keeps a backup. Resolve any migration warning before removing Looper. See the <a href="https://github.com/stphnwlkr/looper-for-etch/blob/main/docs/NATIVE-RUNTIME.md">migration and deactivation test results</a>.</p>
+  <p>Saved queries are native Etch definitions and continue working if you deactivate or uninstall Looper. Your content, layouts, queries, and inserted native expressions stay in place. You lose Looper's builder, sample preview, dynamic-key copying tools, and optional autocomplete.</p>
+  <p>Etch and any plugins supplying fields, galleries, or relationships remain required for their own features. When upgrading older Looper versions, open WordPress admin or Etch once with version 0.9.0 or later active to convert older compatibility definitions. Looper keeps a backup; resolve any migration warning before removing it.</p>
   <h3>Can it edit every Etch loop?</h3>
-  <p>It loads supported WordPress query definitions. JSON loops, dynamic-data arrays, custom PHP callbacks, and queries returning only IDs or counts stay outside the visual builder.</p>
+  <p>The query builder loads supported WordPress definitions. JSON/data-array loops, custom PHP callbacks, and queries returning only IDs or counts remain outside the visual query builder. Unsupported definitions are not silently rewritten.</p>
+  <h3>What about ACF, ACPT, and Meta Box?</h3>
+  <p>Meta filters work with stored keys and values, and the sample shows data exposed by Etch and its integrations. Each provider has its own storage and relationship behavior. The registered relationship-ID chooser specifically uses Meta Box Relationships; it does not convert ACF or ACPT relationships into Meta Box queries.</p>
   <h3>Does it work across a multisite network?</h3>
-  <p>Queries use each site's own content and Etch registry. Cross-site loops and a network-wide query library are outside this release. A full multisite/Etch test matrix is still pending.</p>
+  <p>Content, saved queries, and preferences use the current site. Cross-site queries and a network-wide query library are outside this release. A full multisite/Etch compatibility matrix remains pending.</p>
+
+  <h2>Requirements and updates</h2>
+  <p>Requires WordPress 7.1+, PHP 8.3+, and Etch with its public Loop API. Tested with Etch 1.7.1. Access requires administrator permissions or <code>manage_options</code>; user previews additionally require <code>list_users</code>. Field, gallery, and relationship providers are needed only for features that use them.</p>
+  <p>Stable GitHub releases appear in the normal WordPress plugin-update interface. Automatic updates remain your choice, and installed sites need no GitHub token. Download the asset named <code>looper-for-etch.zip</code>; GitHub's separate source archives are for development.</p>
 
   <h2>Resources</h2>
   <ul>
     <li><a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/looper-for-etch.zip">Download the latest Looper ZIP</a></li>
-    <li><a href="https://github.com/stphnwlkr/looper-for-etch">Source, issues, and documentation</a></li>
-    <li><a href="https://github.com/stphnwlkr/looper-for-etch/releases">Release notes</a> and <a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/changelog.json">JSON changelog</a></li>
-    <li><a href="https://docs.etchwp.com/loops/basic-loops">Etch: basic loops and dynamic data</a></li>
-    <li><a href="https://docs.etchwp.com/loops/loop-arguments">Etch: loop arguments and defaults</a></li>
-    <li><a href="https://docs.etchwp.com/loops/looping-attachments">Etch: attachment loops</a> and <a href="https://docs.etchwp.com/loops/main-query">Main Query loops</a></li>
+    <li><a href="https://github.com/stphnwlkr/looper-for-etch">Source and documentation</a> · <a href="https://github.com/stphnwlkr/looper-for-etch/issues">Questions and issues</a></li>
+    <li><a href="https://github.com/stphnwlkr/looper-for-etch/blob/main/docs/AUTOCOMPLETE.md">Autocomplete behavior and limits</a> · <a href="https://github.com/stphnwlkr/looper-for-etch/blob/main/docs/NATIVE-RUNTIME.md">Native queries and deactivation tests</a></li>
+    <li><a href="https://docs.etchwp.com/loops/basic-loops">Etch basic loops</a> · <a href="https://docs.etchwp.com/loops/loop-arguments">Arguments and defaults</a></li>
+    <li><a href="https://docs.etchwp.com/loops/looping-attachments">Attachment loops</a> · <a href="https://docs.etchwp.com/loops/main-query">Main Query</a></li>
+    <li><a href="https://docs.etchwp.com/dynamic-data/dynamic-data-modifiers/basic-modifiers#keys">Etch keys(), values(), and other modifiers</a></li>
     <li><a href="https://developer.wordpress.org/reference/classes/wp_query/">WordPress query parameters</a></li>
-    <li><a href="https://developer.wordpress.org/reference/classes/wp_meta_query/__construct/">Meta comparisons and types</a> and <a href="https://developer.wordpress.org/reference/classes/wp_date_query/__construct/">date-query parameters</a></li>
+    <li><a href="https://developer.wordpress.org/reference/classes/wp_meta_query/__construct/">Meta comparisons</a> · <a href="https://developer.wordpress.org/reference/classes/wp_date_query/__construct/">Date-query parameters</a></li>
   </ul>
   <section id="changelog">
     <h2>Changelog</h2>
-    <p><a href="https://github.com/stphnwlkr/looper-for-etch/releases">Read release notes</a> or load the <a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/changelog.json">latest released JSON changelog</a> for a version-by-version history.</p>
+    <p><a href="https://github.com/stphnwlkr/looper-for-etch/releases">Read release notes</a> or use the <a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/changelog.json">released JSON changelog</a> for a version-by-version history.</p>
   </section>
-  <p><a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/looper-for-etch.zip">Download Looper for Etch</a> · <a href="https://github.com/stphnwlkr/looper-for-etch/issues">Questions and issues</a></p>
 </section>

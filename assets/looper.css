@@ -88,3 +88,9 @@ button.remove-action:focus-visible{outline:3px solid #93baff;outline-offset:3px}
 .native-save-confirm { grid-column: 1 / -1; margin-top: 1rem; padding: 1rem; border: 1px solid #759fe9; border-radius: .5rem; background: #20242c; }
 .native-save-confirm h3 { margin: 0 0 .5rem; }
 .native-save-confirm button { margin-top: .5rem; }
+
+ .looper-settings{display:flex;align-items:center}.settings-panel{position:fixed;inset:auto;margin:0;width:min(340px,calc(100vw - 16px));max-height:70vh;overflow:auto;padding:16px;background:#252527;color:#eeeeef;border:1px solid #929297;border-radius:8px;z-index:100100;box-shadow:0 8px 24px #0006}.settings-panel::backdrop{background:transparent}.settings-panel p{margin:10px 0 0}.settings-panel label{font-size:13px;min-height:28px}
+.sample-modifiers{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 10px}.sample-modifiers .hint{font-size:11px}
+.settings-panel .field:not(:first-child){margin-top:18px}
+.source-selection{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:15px}.source-selection>.field:only-child{grid-column:1/-1}@container looper-form (max-width:420px){.source-selection{grid-template-columns:minmax(0,1fr);gap:0}}
+.copy-instructions{font-size:16px;line-height:1.5;margin:12px 0 16px}.notice:empty{min-height:0;padding:0;margin:0}

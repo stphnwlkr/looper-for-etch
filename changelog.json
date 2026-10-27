@@ -1,5 +1,23 @@
 [
   {
+    "version": "0.10.0",
+    "summary": "Optional loop field suggestions in the Etch HTML editor.",
+    "changes": {
+      "added": [
+        "Experimental HTML editor suggestions based on a matching loop sample, including nested aliases, object keys, and keys()/values() modifiers.",
+        "A per-user, per-site preference in an anchored Settings popover. Suggestions are off by default and can be disabled without reloading.",
+        "Copyable keys()/values() expressions for objects in the sample preview."
+      ],
+      "changed": [
+        "Remove the introductory banner so the form starts with the existing-loop chooser.",
+        "Make copy/paste the default and place direct save/update, insert, and apply actions behind a separate off-by-default setting.",
+        "Place Loop source and Content type side by side, stacking only in narrow form panels.",
+        "Hide name/key fields in copy-only mode and place 16px copy guidance below the code output.",
+        "Rewrite the product overview and getting-started guidance for the copy-first workflow, optional settings, autocomplete limits, and native query behavior."
+      ]
+    }
+  },
+  {
     "version": "0.9.0",
     "summary": "Save native Etch queries that continue working with Looper deactivated.",
     "changes": {

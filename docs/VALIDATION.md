@@ -1,4 +1,4 @@
-# 0.9.0 validation
+# Validation history
 
 Review date: 2026-10-27.
 
@@ -39,3 +39,7 @@ Legacy v1 gallery and v2 post, term, user and Main Query definitions migrate to 
 Twenty encoded runtime fixtures were migrated, then Looper was actually deactivated. Every query executed and every Etch loop block rendered the expected records as an anonymous visitor. Coverage includes nested filters, argument defaults/overrides, attachments/collections, terms/users, Main Query and provider-backed relationships. Temporary fixtures were removed and Looper reactivated.
 
 Copy for Etch was checked to exclude the assignment and outer brackets while retaining nested sorting arrays. The browser no-reload path, confirmation/cancellation flow, and confirmed save/edit/reload workflow were exercised. The reload path preserved a changed Count argument and nested metadata groups, including a subsequent Etch Save. Public action tests cover saving editor changes before native writes, failure/conflict handling, insertion/application after refresh, nested-loop preservation, and continuation expiry. See NATIVE-RUNTIME.md for workflow and limits.
+
+## 0.10.0 validation
+
+Optional autocomplete and Settings validation are documented in AUTOCOMPLETE.md. Additional browser checks confirmed copy-first controls, direct-action opt-in and disable, a stationary Settings button, no intro banner, and side-by-side source controls. Settings persistence, invalid preference rejection, and ordinary frontend asset exclusion were exercised on localhost.

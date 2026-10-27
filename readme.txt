@@ -3,7 +3,7 @@ Contributors: stphnwlkr
 Requires at least: 7.1
 Tested up to: 7.2
 Requires PHP: 8.3
-Stable tag: 0.9.0
+Stable tag: 0.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -15,9 +15,12 @@ Build post, attachment, term, user, and archive/search Main Query loops. Combine
 Distributed through GitHub releases. Updates appear in the standard WordPress Plugins/Updates interface. This is not a WordPress.org-hosted plugin.
 
 == Installation ==
-Upload the release ZIP through Plugins > Add New > Upload Plugin. Activate Looper, reload Etch, and use its left-toolbar button. Most actions update the editor without reloading; use Etch Save. Queries rejected by Etch’s editor validation offer Save changes and reload or Cancel before any automatic save. Review inserted/applied elements after reload and use Etch Save. Older compatibility queries migrate on the next administrator visit; resolve any warning before removing Looper.
+Upload the release ZIP through Plugins > Add New > Upload Plugin. Activate Looper, reload Etch, and use its left-toolbar button. Copy/paste is the default. Copy for Etch copies only the entries for the existing query-arguments array. Enable direct Etch actions in Settings to reveal save/update, insert, and apply controls. Enable optional HTML loop field suggestions separately. Most direct actions update the editor without reloading; use Etch Save. Queries rejected by Etch’s editor validation offer Save changes and reload or Cancel before any automatic save. Review inserted/applied elements after reload and use Etch Save. Older compatibility queries migrate on the next administrator visit; resolve any warning before removing Looper.
 
 == Changelog ==
+= 0.10.0 =
+Optional experimental HTML loop field suggestions, a per-user Settings popover, native keys()/values() choices, and a compact form.
+
 = 0.9.0 =
 Native Etch query storage, automatic compatibility migration with backup, no runtime decoding, conditional reload confirmation, Etch-ready argument copying, and More after Advanced.
 

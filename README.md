@@ -8,7 +8,7 @@ Requires WordPress 7.1+, PHP 8.3+, and Etch for editor integration. The interfac
 
 Download **looper-for-etch.zip** from the [latest release](https://github.com/stphnwlkr/looper-for-etch/releases/latest). Upload it in WordPress under Plugins → Add New → Upload Plugin, then activate it.
 
-Open Looper from Etch's left toolbar. Tools → Looper for Etch also provides query building, preview, and PHP export outside the editor.
+Open Looper from Etch's left toolbar. Copy/paste is the default workflow; enable direct Etch actions in Settings if you want save/update, insert, and apply controls. Tools → Looper for Etch also provides query building, preview, and PHP export outside the editor.
 
 ## Build and edit loops
 
@@ -25,11 +25,17 @@ Optional scalar arguments generate defaults such as `$count ?? 6`. Lists use fix
 
 Load an existing supported query to edit it. Keeping its key updates that definition; changing its key creates another. New keys use camelCase. Looper can save a definition, insert a loop element, or apply a query to the selected loop element. **Most actions update the editor without a reload; use Etch Save to keep them. If Etch’s editor API rejects a query shape, Looper offers Save changes and reload or Cancel. Confirming saves all current editor changes and the native query, then reloads. Review inserted/applied elements and use Etch Save afterward.** Updating a shared definition affects every loop that references it.
 
-Every query is stored as a native Etch definition. Looper adds no query decoding or visitor-time query processing.
+Queries saved to Etch use native Etch definitions. Looper adds no query decoding or visitor-time query processing.
+
+## Optional builder suggestions
+
+In Settings, enable **HTML loop field suggestions** to list sample fields when typing `{loopAlias.` in Etch's HTML editor. Suggestions follow nested loop aliases and object paths, with keyboard selection and native `.keys()` / `.values()` choices. The sample preview also provides copyable modifier expressions for objects. The setting is off by default, saved for your user on the current site, and takes effect without saving/reloading the document.
+
+This is experimental and currently HTML-editor-only. It uses one matching sample rather than a complete database schema; missing fields may not appear. Required arguments must be available. Main Query needs archive/search context and is not sampled by this first version. Looper steps aside for a visible Etch/Enhancer completion menu. See [autocomplete behavior and tests](docs/AUTOCOMPLETE.md).
 
 ## Deactivation and uninstall
 
-Saved queries continue working with Looper deactivated or uninstalled. You lose only Looper's visual query builder, sample preview, and copyable dynamic-key tools. Your content, page layouts, and saved Etch definitions are kept; you can still edit queries in Etch's Loop Manager.
+Saved queries continue working with Looper deactivated or uninstalled. You lose only Looper's visual query builder, sample preview, copyable dynamic-key tools, and optional builder suggestions. Your content, page layouts, and saved Etch definitions are kept; you can still edit queries in Etch's Loop Manager.
 
 Version 0.9.0 automatically converts older Looper compatibility definitions when an administrator next opens WordPress admin or the Etch editor. It keeps a non-autoloaded, site-specific backup before conversion, retains IDs, keys, scope, arguments and other saved properties, and reports any definition it cannot convert safely. Open the updated editor and resolve any migration warning before removing Looper. No separate query registry or public execution endpoint is added.
 
@@ -55,7 +61,7 @@ See [validation](docs/VALIDATION.md), [accessibility](docs/ACCESSIBILITY.md), an
 
 Run `npm ci && npm test` for query, editor-action, and DOM accessibility tests. Run `php tests/updater-test.php` for updater trust-boundary tests. Integration checks require a disposable WordPress installation with Etch.
 
-Run `python3 scripts/build-release.py 0.9.0` to create the installable ZIP and update manifest under `dist/`. A pushed `vX.Y.Z` tag runs the release workflow. Runtime versions must match the tag.
+Run `python3 scripts/build-release.py 0.10.0` to create the installable ZIP and update manifest under `dist/`. A pushed `vX.Y.Z` tag runs the release workflow. Runtime versions must match the tag.
 
 GPL-2.0-or-later. This is an independent plugin and is not an official Etch product.
 

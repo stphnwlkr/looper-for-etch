@@ -7,7 +7,7 @@ const loops={},blocks={};let selected=null,serial=0,failSave=false,failRequest=f
 const tick=(ms=0)=>new Promise(r=>setTimeout(r,ms));
 function fixture(pending){
  const dom=new JSDOM('<!doctype html><html lang="en"><head><title>Looper</title></head><body></body></html>',{url:'http://localhost:8881/?etch=magic&post_id=6554',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:new VirtualConsole()});
- const w=dom.window;w.navigator.clipboard={writeText:async value=>{clipboard=value;}};w.looperConfig={api:'http://localhost:8881/fixture/',styles:'/fixture.css',nonce:'fixture'};
+ const w=dom.window;w.navigator.clipboard={writeText:async value=>{clipboard=value;}};w.looperConfig={api:'http://localhost:8881/fixture/',styles:'/fixture.css',nonce:'fixture',directActions:true};
  w.etchControls={builder:{settingsBar:{bottom:{addBefore(){}}}}};
  w.etch={environment:{capabilities:{loops:true}},saveAsync:async()=>{saves++;if(failSave)throw Error('Editor save failed');},loops:{getAll:()=>copy(loops),add(value){if(!apiSupport)throw Error('Unsupported query shape');const id='loop'+(++serial);loops[id]=copy(value);return id;},update(id,value){if(!apiSupport)throw Error('Unsupported query shape');loops[id]=copy(value);},delete(id){delete loops[id];},setForBlock(id,value){blocks[id]={...blocks[id],...value};}},blocks:{getSelectedId:()=>selected,getJson:id=>blocks[id]?copy(blocks[id]):null,create(value){const id='block'+(++serial);blocks[id]=copy(value);return id;},select:id=>{selected=id;}}};
  w.fetch=async(url,options)=>{

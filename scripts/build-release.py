@@ -53,7 +53,7 @@ if not re.search(r"^Stable tag: " + re.escape(version) + r"$", (root / "readme.t
 dest = root / "dist"
 dest.mkdir(exist_ok=True)
 package = dest / "looper-for-etch.zip"
-files = [root / p for p in ("looper-for-etch.php", "query-support.php", "native-queries.php", "query-options.json", "updater.php", "LICENSE", "readme.txt", "changelog.json")]
+files = [root / p for p in ("looper-for-etch.php", "query-support.php", "native-queries.php", "preferences.php", "query-options.json", "updater.php", "LICENSE", "readme.txt", "changelog.json")]
 files += sorted((root / "assets").glob("*"))
 with zipfile.ZipFile(package, "w", zipfile.ZIP_DEFLATED) as archive:
     for path in files:
