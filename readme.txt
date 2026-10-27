@@ -3,7 +3,7 @@ Contributors: stphnwlkr
 Requires at least: 7.1
 Tested up to: 7.2
 Requires PHP: 8.3
-Stable tag: 0.8.0
+Stable tag: 0.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -18,5 +18,8 @@ Distributed through GitHub releases. Updates appear in the standard WordPress Pl
 Upload the release ZIP through Plugins > Add New > Upload Plugin. Activate Looper, reload Etch, and use its left-toolbar button. Use Etch Save after adding or editing a query.
 
 == Changelog ==
+= 0.8.1 =
+Added a user overview, versioned JSON changelog, and release consistency validation.
+
 = 0.8.0 =
 Reviewed Advanced scope, added secure GitHub release updates, hardened preview permissions and validation, improved label layout, and documented security and accessibility verification.

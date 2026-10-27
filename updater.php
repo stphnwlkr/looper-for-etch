@@ -54,7 +54,7 @@ add_filter( 'update_plugins_github.com', function ( $update, $plugin_data, $plug
 add_filter( 'plugins_api', function ( $result, $action, $args ) {
     if ( 'plugin_information' !== $action || 'looper-for-etch' !== ( $args->slug ?? '' ) ) { return $result; }
     $release = lfe_latest_release(); if ( ! $release ) { return $result; }
-    return (object) array( 'name' => 'Looper for Etch', 'slug' => 'looper-for-etch', 'version' => $release['version'], 'author' => 'Stephen Walker', 'homepage' => lfe_update_uri(), 'requires' => $release['requires'], 'requires_php' => $release['requires_php'], 'download_link' => $release['package'], 'sections' => array( 'description' => esc_html__( 'Build WordPress queries for Etch with visual filters, generated PHP, and dynamic-field previews.', 'looper-for-etch' ), 'changelog' => nl2br( esc_html( $release['changelog'] ) ) ) );
+    return (object) array( 'name' => 'Looper for Etch', 'slug' => 'looper-for-etch', 'version' => $release['version'], 'author' => 'Stephen Walker', 'homepage' => 'https://plugins.uplink.press/project/looper-for-etch/', 'requires' => $release['requires'], 'requires_php' => $release['requires_php'], 'download_link' => $release['package'], 'sections' => array( 'description' => esc_html__( 'Build WordPress queries for Etch with visual filters, generated PHP, and dynamic-field previews.', 'looper-for-etch' ), 'changelog' => nl2br( esc_html( $release['changelog'] ) ) ) );
 }, 10, 3 );
 
 // Let WordPress install the ZIP normally, after verifying its release checksum.

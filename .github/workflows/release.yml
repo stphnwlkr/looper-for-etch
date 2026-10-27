@@ -19,6 +19,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts && npm test
       - run: php tests/updater-test.php
+      - run: python3 tests/release-test.py
       - name: Build stable release
         env:
           RELEASE_TAG: ${{ github.ref_name }}
@@ -29,4 +30,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: gh release create "$RELEASE_TAG" dist/looper-for-etch.zip dist/looper-for-etch-update.json --verify-tag --title "Looper for Etch $RELEASE_TAG" --notes-file CHANGELOG.md
+        run: gh release create "$RELEASE_TAG" dist/looper-for-etch.zip dist/looper-for-etch-update.json dist/changelog.json --verify-tag --title "Looper for Etch $RELEASE_TAG" --notes-file dist/release-notes.md

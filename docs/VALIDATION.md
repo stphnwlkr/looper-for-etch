@@ -28,4 +28,4 @@ See ACCESSIBILITY.md for the accessibility checks and remaining coverage limits.
 
 ## Native update verification
 
-The public release must be available before a real WordPress upgrade can be exercised. This section is updated after that verification.
+Verified against the published 0.8.0 GitHub release: WordPress offered 0.8.0 to an installation temporarily marked 0.7.9, then the standard WordPress plugin upgrader downloaded the versioned package, installed it, and reported a successful 0.7.9 → 0.8.0 update. The release asset checksum matched the public update manifest. The updated plugin remained active and every saved Etch definition was unchanged.

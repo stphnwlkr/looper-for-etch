@@ -1,0 +1,36 @@
+[
+  {
+    "version": "0.8.1",
+    "summary": "Added the public user overview and a validated, machine-readable release changelog.",
+    "changes": {
+      "features": [
+        "Add an Etch-focused overview, usage steps, compatibility notes, and official resource links for the product page.",
+        "Publish changelog.json in the repository, installable package, and release assets.",
+        "Generate GitHub release notes from the matching JSON entry and block releases when version metadata or changelog entries do not match."
+      ],
+      "fixes": [
+        "Point the plugin information link to its public Uplink product page.",
+        "Document the successful native WordPress update and remaining multisite and accessibility verification limits."
+      ]
+    }
+  },
+  {
+    "version": "0.8.0",
+    "summary": "Initial public release of Looper for Etch with focused query controls and native WordPress updates.",
+    "changes": {
+      "features": [
+        "Build post, attachment, taxonomy-term, user, and archive/search Main Query loops.",
+        "Combine taxonomy, meta, and date filters with nested AND/OR groups, optional scalar arguments, and live PHP output.",
+        "Search taxonomy terms by name and inspect one sample record with copyable Etch dynamic keys.",
+        "Load supported existing queries, update their definitions, insert loop elements, or apply a definition to the selected loop.",
+        "Add stable GitHub release discovery through the WordPress Plugins/Updates interface with compatibility metadata and SHA-256 package checks."
+      ],
+      "fixes": [
+        "Keep Advanced focused on content selection, filtering, ordering, and pagination; remove execution and return-format controls.",
+        "Move Ignore sticky promotion to Query options, widen labels, and remove Fixed value labels.",
+        "Keep the native Etch left toolbar available and close Looper when another toolbar tool is chosen.",
+        "Harden preview permissions, nonce handling, query validation, and metadata discovery; add query, editor, accessibility, and updater tests."
+      ]
+    }
+  }
+]

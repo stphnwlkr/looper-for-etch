@@ -1,0 +1,67 @@
+<section>
+  <header>
+    <h1>Looper for Etch</h1>
+    <p><strong>Choose your content. See the query.</strong></p>
+    <p>Build simple and complex WordPress queries inside Etch. Choose your content, combine filters, and inspect the generated PHP as you work.</p>
+    <p><a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/looper-for-etch.zip">Download plugin</a> · <a href="#changelog">Changelog</a></p>
+    <p>Visual controls · Visible PHP output · Saved in Etch</p>
+  </header>
+  <h2>What the plugin does</h2>
+  <p>Looper is a visual query builder for EtchWP. Use it to choose the content your visitors see, from a simple list of recent posts to a query that combines taxonomy, meta, date, and relationship conditions. The generated PHP stays visible as you work, so you can see exactly what the controls produce.</p>
+  <p>Looper handles the data query. You continue designing the repeated content in Etch, using your own elements, components, and dynamic data.</p>
+
+  <h2>Choose what repeats</h2>
+  <p>Build queries for posts and public custom post types, Media Library attachments, taxonomy terms, or WordPress users. Use Main Query for archive and search templates where the current URL supplies the query context. Attachment queries support file types, parent posts, and attachment taxonomies such as Etch Collections.</p>
+  <p>Set count, sorting, status, and offset, then add only the filters you need. Taxonomy filters include a term-name lookup. Meta filters work with stored keys and values, including manually entered keys. Date filters provide calendar pickers and relative dates.</p>
+
+  <h2>Combine your filters</h2>
+  <p>Nested AND/OR groups let you express conditions such as “in either of these categories, with a rating above a threshold, and published within this date range.” Advanced adds selection, author, search, hierarchy, and pagination controls where the query source supports them. It stays focused on selecting, filtering, and ordering content rather than database tuning.</p>
+  <p>Mark a supported scalar option as an Argument to reuse a definition with different values. For example, <code>$count ?? 6</code> supplies a default of six records while allowing another count when the loop is used. List settings use explicit values.</p>
+
+  <h2>Preview the data. Copy the dynamic key.</h2>
+  <p>Run preview to inspect one matching record. Expand its fields and copy an Etch expression such as <code>{item.title}</code> directly into your loop's content. Preview uses the argument defaults entered in Looper. Main Query results need to be checked in the relevant archive or search template.</p>
+  <p>Load an existing supported query to edit it, save a definition into the Loop Manager, insert a new loop element, or apply the definition to the selected loop. Keeping a query's key updates that definition wherever it is referenced; changing the key creates another. Finish with <strong>Etch Save</strong> to persist editor changes.</p>
+
+  <h2>Get started</h2>
+  <ol>
+    <li>Install the release ZIP, activate Looper, and open its button in Etch's left toolbar.</li>
+    <li>Choose a source, name the query, and configure its options and filters.</li>
+    <li>Inspect the generated PHP and run a sample preview.</li>
+    <li>Choose the appropriate Etch action, then save in Etch.</li>
+  </ol>
+  <h2>Requirements</h2>
+  <ul>
+    <li>WordPress 7.1 or later and PHP 8.3 or later.</li>
+    <li>Etch with its public Loop API for editor integration. Tested with Etch 1.7.1.</li>
+    <li>Administrator access or the manage_options capability. User previews also require list_users.</li>
+    <li>Meta Box Relationships only when building queries that use that integration.</li>
+  </ul>
+  <h2>Updates through WordPress</h2>
+  <p>Stable versions are published as GitHub releases and appear alongside your other WordPress plugin updates. Install them normally or opt into WordPress auto-updates. Your site does not need a GitHub token. Download the release asset named <code>looper-for-etch.zip</code>; GitHub's separate source archives are for development.</p>
+  <h2>Good to know</h2>
+  <h3>Does Looper save the page?</h3>
+  <p>Its actions update the editor session. Use Etch Save to persist those changes. Updating a shared definition changes every loop that references that definition.</p>
+  <h3>Do I need to keep Looper active?</h3>
+  <p>Yes, for complex definitions that use its compatibility integration. Their complete configuration is stored with the Etch query and expanded by Looper when used.</p>
+  <h3>Can it edit every Etch loop?</h3>
+  <p>It loads supported WordPress query definitions. JSON loops, dynamic-data arrays, custom PHP callbacks, and queries returning only IDs or counts stay outside the visual builder.</p>
+  <h3>Does it work across a multisite network?</h3>
+  <p>Queries use each site's own content and Etch registry. Cross-site loops and a network-wide query library are outside this release. A full multisite/Etch test matrix is still pending.</p>
+
+  <h2>Resources</h2>
+  <ul>
+    <li><a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/looper-for-etch.zip">Download the latest Looper ZIP</a></li>
+    <li><a href="https://github.com/stphnwlkr/looper-for-etch">Source, issues, and documentation</a></li>
+    <li><a href="https://github.com/stphnwlkr/looper-for-etch/releases">Release notes</a> and <a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/changelog.json">JSON changelog</a></li>
+    <li><a href="https://docs.etchwp.com/loops/basic-loops">Etch: basic loops and dynamic data</a></li>
+    <li><a href="https://docs.etchwp.com/loops/loop-arguments">Etch: loop arguments and defaults</a></li>
+    <li><a href="https://docs.etchwp.com/loops/looping-attachments">Etch: attachment loops</a> and <a href="https://docs.etchwp.com/loops/main-query">Main Query loops</a></li>
+    <li><a href="https://developer.wordpress.org/reference/classes/wp_query/">WordPress query parameters</a></li>
+    <li><a href="https://developer.wordpress.org/reference/classes/wp_meta_query/__construct/">Meta comparisons and types</a> and <a href="https://developer.wordpress.org/reference/classes/wp_date_query/__construct/">date-query parameters</a></li>
+  </ul>
+  <section id="changelog">
+    <h2>Changelog</h2>
+    <p><a href="https://github.com/stphnwlkr/looper-for-etch/releases">Read release notes</a> or load the <a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/changelog.json">latest released JSON changelog</a> for a version-by-version history.</p>
+  </section>
+  <p><a href="https://github.com/stphnwlkr/looper-for-etch/releases/latest/download/looper-for-etch.zip">Download Looper for Etch</a> · <a href="https://github.com/stphnwlkr/looper-for-etch/issues">Questions and issues</a></p>
+</section>

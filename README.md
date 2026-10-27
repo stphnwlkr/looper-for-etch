@@ -47,6 +47,8 @@ See [validation](docs/VALIDATION.md), [accessibility](docs/ACCESSIBILITY.md), an
 
 Run `npm ci && npm test` for query, editor-action, and DOM accessibility tests. Run `php tests/updater-test.php` for updater trust-boundary tests. Integration checks require a disposable WordPress installation with Etch.
 
-Run `python3 scripts/build-release.py 0.8.0` to create the installable ZIP and update manifest under `dist/`. A pushed `vX.Y.Z` tag runs the release workflow. Runtime versions must match the tag.
+Run `python3 scripts/build-release.py 0.8.1` to create the installable ZIP and update manifest under `dist/`. A pushed `vX.Y.Z` tag runs the release workflow. Runtime versions must match the tag.
 
 GPL-2.0-or-later. This is an independent plugin and is not an official Etch product.
+
+The [product-page overview](docs/product-overview.html) is a reusable HTML fragment. Release history is maintained in [changelog.json](changelog.json); every release is blocked until its version has a matching newest entry.

@@ -19,4 +19,5 @@ jobs:
           php -l query-support.php
           php -l updater.php
           php tests/updater-test.php
+      - run: python3 tests/release-test.py
       - run: python3 scripts/build-release.py "$(node -p 'require("./package.json").version')"
