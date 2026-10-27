@@ -1,0 +1,13 @@
+{
+  "name": "looper-for-etch",
+  "version": "0.8.0",
+  "private": true,
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "test": "node tests/query.test.cjs && node tests/query-terms.test.cjs && node tests/main-media.test.cjs && node tests/actions.test.cjs && node tests/unified-options.test.cjs && node tests/toolbar.test.cjs"
+  },
+  "devDependencies": {
+    "axe-core": "4.14.0",
+    "jsdom": "26.1.0"
+  }
+}

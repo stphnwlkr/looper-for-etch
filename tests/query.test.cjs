@@ -1,0 +1,14 @@
+const assert = require('node:assert/strict');
+const {compile, initial} = require('../assets/query.js');
+let passed=0;
+function test(name, run){run(); passed++; console.log('PASS '+name)}
+test('defaults and disabled arguments',()=>{const s=initial();const q=compile(s);assert.equal(q.args.posts_per_page,6);assert.ok(!('offset' in q.args));assert.match(q.php, /'post_status' => 'publish'/)});
+test('all five optional parameters preserve literal preview defaults',()=>{const s=initial();for(const o of Object.values(s.options)){o.enabled=true;o.parameter=true}const q=compile(s);assert.equal(q.native.posts_per_page,'$count ?? 6');assert.equal(q.native.order,"$order ?? 'DESC'");assert.equal(q.native.orderby,"$orderby ?? 'date'");assert.equal(q.native.offset,'$offset ?? 0');assert.equal(q.native.post_status,"$status ?? 'publish'");assert.equal(q.args.posts_per_page,6);assert.match(q.php, /'order' => \$order \?\? 'DESC'/)});
+test('combined taxonomy and numeric meta filters retain group relations',()=>{const s=initial();s.taxRelation='OR';s.tax=[{taxonomy:'category',terms:'news, events',operator:'IN',children:true}];s.meta=[{key:'price',compare:'BETWEEN',type:'NUMERIC',value:'10, 50'}];const q=compile(s);assert.equal(q.args.tax_query.relation,'OR');assert.deepEqual(q.args.tax_query[0].terms,['news','events']);assert.deepEqual(q.args.meta_query[0].value,[10,50]);assert.equal(q.args.meta_query.relation,'AND')});
+test('existence operators omit unused meta values',()=>{const s=initial();s.meta=[{key:'featured',compare:'EXISTS',type:'CHAR',value:''}];assert.ok(!('value' in compile(s).args.meta_query[0]))});
+test('reject empty counts, zero counts and negative offset',()=>{for(const value of ['',0,'1.2',-2]){const s=initial();s.options.posts_per_page.value=value;assert.throws(()=>compile(s))}const s=initial();s.options.offset={enabled:true,value:-1};assert.throws(()=>compile(s));s.options.posts_per_page.value=-1;s.options.offset.enabled=false;assert.equal(compile(s).args.posts_per_page,-1)});
+test('reject invalid numeric filters and between ranges',()=>{const s=initial();s.meta=[{key:'price',compare:'BETWEEN',type:'NUMERIC',value:'10'}];assert.throws(()=>compile(s));s.meta[0].value='ten,20';assert.throws(()=>compile(s))});
+test('custom-field sorting requires its key',()=>{const s=initial();s.options.orderby.value='meta_value_num';assert.throws(()=>compile(s));s.sortMetaKey='price';assert.equal(compile(s).args.meta_key,'price')});
+test('PHP export quotes expression-like user values',()=>{const s=initial();s.search="$x ?? system('id')";const php=compile(s).php;assert.ok(php.includes("'s' => '$x ?? system(\\'id\\')'"))});
+test('IDs use numeric include/exclude arrays',()=>{const s=initial();s.include='12, 15';s.exclude='18';assert.deepEqual(compile(s).args.post__in,[12,15]);assert.deepEqual(compile(s).args.post__not_in,[18])});
+console.log(passed+' tests passed');
