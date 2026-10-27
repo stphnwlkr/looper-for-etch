@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.9.0",
+    "summary": "Save native Etch queries that continue working with Looper deactivated.",
+    "changes": {
+      "changed": [
+        "Save all query types as native Etch arguments; remove encoded query writing and visitor-time decoding hooks.",
+        "Use Etch\u2019s editor API without reloading where it preserves the native query. Otherwise offer Save changes and reload or Cancel before saving all editor changes and refreshing. Insert/apply actions resume for review after a confirmed reload.",
+        "Place More after Advanced in the main tabs.",
+        "Copy for Etch copies only the entries inside the query_args array, preserving nested arrays. Explain that manual paste into Etch does not require reloading."
+      ],
+      "added": [
+        "Automatically migrate older gallery and encoded definitions during an administrator visit, keeping a site-specific backup and preserving query IDs, scope, arguments and other saved properties.",
+        "Protect native saves with authenticated permissions, expected-definition checks, atomic conflict detection and readback.",
+        "Document migration, deactivation behavior and successful native rendering tests."
+      ]
+    }
+  },
+  {
     "version": "0.8.1",
     "summary": "Added the public user overview and a validated, machine-readable release changelog.",
     "changes": {

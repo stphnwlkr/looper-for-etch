@@ -18,7 +18,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts && npm test
-      - run: php tests/updater-test.php
+      - name: PHP syntax and updater tests
+        run: |
+          php -l looper-for-etch.php
+          php -l query-support.php
+          php -l native-queries.php
+          php -l updater.php
+          php tests/updater-test.php
       - run: python3 tests/release-test.py
       - name: Build stable release
         env:

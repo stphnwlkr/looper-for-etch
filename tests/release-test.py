@@ -17,6 +17,7 @@ with tempfile.TemporaryDirectory() as directory:
     with zipfile.ZipFile(stage / "dist/looper-for-etch.zip") as archive:
         names = archive.namelist()
         assert "looper-for-etch/changelog.json" in names
+        assert "looper-for-etch/native-queries.php" in names
         assert all(name.startswith("looper-for-etch/") for name in names)
         assert not any("/tests/" in name or "/.git" in name or "/node_modules/" in name for name in names)
     original = (stage / "changelog.json").read_text()

@@ -21,17 +21,19 @@ Open Looper from Etch's left toolbar. Tools → Looper for Etch also provides qu
 
 Supported sources are posts, attachments, public custom post types, taxonomy terms, users, and the inherited Main Query for archive and search templates. JSON and dynamic-data array loops remain in Etch.
 
-Optional scalar arguments generate defaults such as `$count ?? 6`. Lists use fixed values. Preview uses the supplied defaults and never executes pasted PHP. The generated code omits the opening PHP tag for Etch.
+Optional scalar arguments generate defaults such as `$count ?? 6`. Lists use fixed values. Preview uses the supplied defaults and never executes pasted PHP. The generated PHP stays visible. Copy for Etch copies only the entries inside the $query_args array, omitting the opening PHP tag, assignment and outer brackets. Paste those entries inside Etch’s existing array; this manual route does not reload the editor.
 
-Load an existing supported query to edit it. Keeping its key updates that definition; changing its key creates another. New keys use camelCase. Looper can save a definition, insert a loop element, or apply a query to the selected loop element. **Use Etch Save to persist editor changes.** Updating a shared definition affects every loop that references it.
+Load an existing supported query to edit it. Keeping its key updates that definition; changing its key creates another. New keys use camelCase. Looper can save a definition, insert a loop element, or apply a query to the selected loop element. **Most actions update the editor without a reload; use Etch Save to keep them. If Etch’s editor API rejects a query shape, Looper offers Save changes and reload or Cancel. Confirming saves all current editor changes and the native query, then reloads. Review inserted/applied elements and use Etch Save afterward.** Updating a shared definition affects every loop that references it.
 
-Complex definitions use a compatibility payload stored in Etch's loop registry. Keep Looper active for those definitions to execute correctly. No separate query registry or visitor-facing REST endpoint is added.
+Every query is stored as a native Etch definition. Looper adds no query decoding or visitor-time query processing.
 
 ## Deactivation and uninstall
 
-For the current release, keep Looper active while testing queries created with it. Removing Looper does not delete content, page layouts, or saved Etch queries. You lose its query builder, preview, and editing tools. Queries saved in Looper's special compatibility format can stop displaying results until their settings are converted to ordinary native Etch definitions. Its extra missing-Meta-Box-relationship safeguard is also removed.
+Saved queries continue working with Looper deactivated or uninstalled. You lose only Looper's visual query builder, sample preview, and copyable dynamic-key tools. Your content, page layouts, and saved Etch definitions are kept; you can still edit queries in Etch's Loop Manager.
 
-Ordinary native Etch queries keep working. Native-query testing confirmed the query features themselves do not require Looper's frontend processing, but **0.8.1 does not automatically migrate existing definitions**. Field and relationship providers still have their own dependencies. See [native runtime testing](docs/NATIVE-RUNTIME.md).
+Version 0.9.0 automatically converts older Looper compatibility definitions when an administrator next opens WordPress admin or the Etch editor. It keeps a non-autoloaded, site-specific backup before conversion, retains IDs, keys, scope, arguments and other saved properties, and reports any definition it cannot convert safely. Open the updated editor and resolve any migration warning before removing Looper. No separate query registry or public execution endpoint is added.
+
+Etch remains required to render Etch loops. Meta Box Relationships, Media Bridge, and other providers remain required for their own features. Looper no longer adds a runtime safeguard for a missing relationship provider. See [native runtime and migration testing](docs/NATIVE-RUNTIME.md).
 
 ## Multisite
 
@@ -53,7 +55,7 @@ See [validation](docs/VALIDATION.md), [accessibility](docs/ACCESSIBILITY.md), an
 
 Run `npm ci && npm test` for query, editor-action, and DOM accessibility tests. Run `php tests/updater-test.php` for updater trust-boundary tests. Integration checks require a disposable WordPress installation with Etch.
 
-Run `python3 scripts/build-release.py 0.8.1` to create the installable ZIP and update manifest under `dist/`. A pushed `vX.Y.Z` tag runs the release workflow. Runtime versions must match the tag.
+Run `python3 scripts/build-release.py 0.9.0` to create the installable ZIP and update manifest under `dist/`. A pushed `vX.Y.Z` tag runs the release workflow. Runtime versions must match the tag.
 
 GPL-2.0-or-later. This is an independent plugin and is not an official Etch product.
 

@@ -17,6 +17,7 @@ jobs:
         run: |
           php -l looper-for-etch.php
           php -l query-support.php
+          php -l native-queries.php
           php -l updater.php
           php tests/updater-test.php
       - run: python3 tests/release-test.py

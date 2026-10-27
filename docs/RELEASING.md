@@ -1,7 +1,7 @@
 # Releases and WordPress updates
 
 1. Update the plugin header, `package.json`, `package-lock.json`, `readme.txt` stable tag, and add a newest-first entry to `changelog.json` with `version`, `summary`, and categorized `changes` lists. Adjust minimum WordPress/PHP versions when needed.
-2. Run `npm ci && npm test`, `php tests/updater-test.php`, PHP lint, and the WordPress integration checks. Review the runtime ZIP allowlist.
+2. Run `npm ci && npm test`, `php tests/updater-test.php`, PHP lint, and the WordPress integration checks. Run `tests/native-wordpress.php` on a disposable local site, and verify migrated-query rendering with the plugin actually deactivated when changing storage. Review the runtime ZIP allowlist.
 3. Commit to main and push a stable `vX.Y.Z` tag. The release workflow checks the tag's ancestry and verifies the version before publishing.
 4. The workflow publishes `looper-for-etch.zip` `looper-for-etch-update.json`, and `changelog.json`. Release notes are generated from the matching JSON entry. Do not substitute GitHub's automatic source archive for the installable ZIP.
 5. On a test site, use Dashboard → Updates → Check again. Metadata is cached for one hour; an unavailable release is retried after five minutes. Confirm the version and use WordPress Update now.

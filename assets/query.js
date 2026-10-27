@@ -117,18 +117,7 @@
   }
   const galleryKeys=['post_mime_type','post_parent','orderby'];
   const galleryPrefix='_looper_etch_v1_';
-  function apiArgs(result){
-    const args=JSON.parse(JSON.stringify(result.native));
-    for(const key of ['tax_query','meta_query'])if(args[key])args[key]=Object.entries(args[key]).filter(([name])=>name!=='relation').map(([,rule])=>rule);
-    if(result.type==='wp-query'&&args.post_type==='attachment'){
-      for(const key of galleryKeys){
-        if(!(key in args)||(key==='orderby'&&args[key]!=='collection_order'))continue;
-        (args.meta_query||=[]).push({key:galleryPrefix+key,value:args[key],compare:'='});
-        if(key==='orderby')args.orderby='ID';else delete args[key];
-      }
-    }
-    return args;
-  }
+  function apiArgs(result){return clone(result.native);}
   function decodeApiArgs(input){
     const args=JSON.parse(JSON.stringify(input||{}));
     if(args.post_type!=='attachment'||!args.meta_query)return args;
@@ -377,25 +366,9 @@
     r.php='$query_args = '+expandedPhp(r.native)+';';r.json=JSON.stringify({type:r.type,args:r.native},null,2);return r;
   }
   const v2Prefix='_looper_etch_v2';
-  function encode64(v){const s=unescape(encodeURIComponent(JSON.stringify(v)));return (typeof btoa==='function'?btoa(s):Buffer.from(s,'binary').toString('base64')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
   function decode64(s){s=s.replace(/-/g,'+').replace(/_/g,'/');const raw=typeof atob==='function'?atob(s):Buffer.from(s,'base64').toString('binary');return JSON.parse(decodeURIComponent(escape(raw)));}
   function decodeExpanded(input){const a=clone(input||{});if(typeof a.taxonomy==='string'&&a.taxonomy.startsWith(v2Prefix+':'))return decode64(a.taxonomy.split('|')[0].slice(v2Prefix.length+1));const marker=Array.isArray(a.meta_query)&&a.meta_query.find(row=>row.key===v2Prefix);return marker?decode64(marker.value):decodeApiArgs(a);}
-  function needsBridge(r){
-    const a=r.native;if(r.type==='wp-terms')return Object.keys(a).some(k=>!['taxonomy','orderby','order','hide_empty'].includes(k))||typeof a.hide_empty==='string'||Array.isArray(a.taxonomy)||(!['name','slug','term_group','term_id','description','count'].includes(a.orderby)&&a.orderby!==undefined&&!String(a.orderby).startsWith('$'));
-    if(r.type==='wp-users')return true;
-    const allowed=['post_type','posts_per_page','offset','paged','page','orderby','order','post_status','ignore_sticky_posts','author','author_name','category','category_name','tag','tax_query','meta_query','s'];
-    if(Object.keys(a).some(k=>!allowed.includes(k)))return true;if(Array.isArray(a.post_status)||typeof a.orderby==='object'||a.orderby&&!sortFields['wp-query'].slice(0,6).concat(['author','name','parent','comment_count']).includes(a.orderby)&&!String(a.orderby).startsWith('$'))return true;
-    for(const k of ['meta_query','tax_query']){const g=a[k];if(!g)continue;const rules=Object.entries(g).filter(([key])=>key!=='relation').map(([,v])=>v);if(g.relation==='OR'&&rules.length>1||rules.some(c=>c.relation||k==='meta_query'&&(!Object.hasOwn(c,'value')||c.compare_key||c.type_key)||k==='tax_query'&&!['IN','NOT IN','AND'].includes(c.operator)||Object.keys(g).some(name=>name!=='relation'&&!/^\d+$/.test(name))))return true;}
-    return false;
-  }
-  function expandedApiArgs(r){
-    // Keep the existing gallery carrier readable and backwards compatible.
-    if(!needsBridge(r))return apiArgs(r);
-    if(r.type==='wp-query'&&r.native.post_type==='attachment'){const native=clone(r.native);delete native.post_mime_type;delete native.post_parent;if(native.orderby==='collection_order')native.orderby='ID';if(!needsBridge({...r,native}))return apiArgs(r);}
-    const payload=encode64(r.native),params=[...JSON.stringify(r.native).matchAll(/\$[a-zA-Z_]\w*(?:\s*\?\?\s*(?:-?\d+(?:\.\d+)?|true|false|'(?:\\.|[^'\\])*'))?/g)].map(m=>m[0]);
-    if(r.type==='wp-terms')return {taxonomy:v2Prefix+':'+payload+(params.length?'|'+[...new Set(params)].join('|'):''),orderby:'name',hide_empty:false};
-    return {...(r.type==='wp-query'?{post_type:r.native.post_type||'post'}:{}),meta_query:[{key:v2Prefix,value:payload,compare:'='},...[...new Set(params)].map((value,i)=>({key:v2Prefix+'_param_'+i,value,compare:'='}))]};
-  }
+  function expandedApiArgs(r){return clone(r.native);}
   function expandedLoad(loop){
     if(!['wp-query','wp-terms','wp-users','main-query'].includes(loop?.config?.type))throw Error('This source is not a WordPress query.');
     const args=decodeExpanded(loop.config.args),source=loop.config.type;if(!args||Array.isArray(args)||typeof args!=='object')throw Error('Invalid query arguments.');
@@ -427,7 +400,12 @@
     return state;
   }
 
-  const api = { compile:expandedCompile, initial:expandedInitial, loadDefinition:expandedLoad, apiArgs:expandedApiArgs, decodeApiArgs:decodeExpanded, basics, termBasics, catalog, sortFields, needsBridge, literal }; 
+  function etchBody(result){
+    if(result.php==='$query_args = [];')return '';
+    return result.php.slice('$query_args = [\n'.length,-'\n];'.length).split('\n').map(line=>line.startsWith('  ')?line.slice(2):line).join('\n');
+  }
+
+  const api = { compile:expandedCompile, initial:expandedInitial, loadDefinition:expandedLoad, apiArgs:expandedApiArgs, decodeApiArgs:decodeExpanded, basics, termBasics, catalog, sortFields, literal, etchBody };
   if (typeof module !== 'undefined') module.exports = api;
   root.LooperQuery = api;
 })(typeof window !== 'undefined' ? window : globalThis);

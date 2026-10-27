@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Looper for Etch
  * Description: Content-aware visual query builder with PHP export and Etch Public API integration.
- * Version: 0.8.1
+ * Version: 0.9.0
  * Requires at least: 7.1
  * Requires PHP: 8.3
  * License: GPL-2.0-or-later
@@ -181,31 +181,13 @@ add_action( 'rest_api_init', function () {
 } );
 
 
-// Etch validates a narrower argument schema than WordPress. Carry attachment-only
-// settings through valid meta clauses, then restore them before SQL is built.
-add_action( 'pre_get_posts', function ( $query ) {
-    if ( 'attachment' !== $query->get( 'post_type' ) ) { return; }
-    $group = $query->get( 'meta_query' );
-    if ( ! is_array( $group ) ) { return; }
-    $remaining = array(); $found = false;
-    foreach ( $group as $key => $clause ) {
-        if ( 'relation' === $key ) { $remaining['relation'] = $clause; continue; }
-        $option = is_array( $clause ) ? ( $clause['key'] ?? '' ) : '';
-        $value = is_array( $clause ) ? ( $clause['value'] ?? null ) : null;
-        if ( '_looper_etch_v1_post_mime_type' === $option && is_string( $value ) && preg_match( '~^[a-z0-9.+_-]+(?:/[a-z0-9.+_-]+)?$~i', $value ) ) {
-            $query->set( 'post_mime_type', $value ); $found = true;
-        } elseif ( '_looper_etch_v1_post_parent' === $option && is_numeric( $value ) && (float) $value >= 0 && floor( (float) $value ) === (float) $value ) {
-            $query->set( 'post_parent', (int) $value ); $found = true;
-        } elseif ( '_looper_etch_v1_orderby' === $option && 'collection_order' === $value ) {
-            $query->set( 'orderby', 'collection_order' ); $found = true;
-        } else { $remaining[] = $clause; }
-    }
-    if ( $found ) { $query->set( 'meta_query', count( array_filter( array_keys( $remaining ), 'is_int' ) ) ? $remaining : array() ); }
-}, 1 );
+require_once __DIR__ . '/native-queries.php';
 
 function lfe_saved_loops() {
+    $migration = lfe_migrate_native_queries();
+    if ( is_wp_error( $migration ) ) { return $migration; }
     $loops = get_option( 'etch_loops', array() );
-    $response = rest_ensure_response( array( 'loops' => is_array( $loops ) ? (object) $loops : (object) array() ) );
+    $response = rest_ensure_response( array( 'loops' => is_array( $loops ) ? (object) $loops : (object) array(), 'migration' => $migration ) );
     $response->header( 'Cache-Control', 'no-store, private' );
     return $response;
 }

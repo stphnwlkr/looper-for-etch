@@ -61,7 +61,7 @@
     const toolbar=event.target instanceof Element?event.target.closest('.settings-bar'):null;
     if(toolbar&&!(trigger&&trigger.contains(event.target)))close(false);
   },true);
-  function open() { if(!savedLoopsLoading)loadSavedLoops(); previousFocus=document.activeElement; host.hidden=false; isolateBackground(); trigger?.setAttribute('aria-expanded','true'); render(); shadow.querySelector('button,input')?.focus(); }
+  function open() { if(busy)return; if(!savedLoopsLoading)loadSavedLoops(); previousFocus=document.activeElement; host.hidden=false; isolateBackground(); trigger?.setAttribute('aria-expanded','true'); render(); shadow.querySelector('button,input')?.focus(); }
   function close(restoreFocus=true) { host.hidden=true; backgroundObserver?.disconnect(); backgroundState.forEach(([n,inert])=>{n.inert=inert;}); backgroundState=[]; if(!admin)document.body.style.overflow=bodyOverflow; trigger?.setAttribute('aria-expanded','false'); if(restoreFocus)(trigger||previousFocus)?.focus(); }
   shadow.addEventListener('keydown',event=>{
     if(admin)return;
@@ -98,6 +98,7 @@
   }
   let message, code, summary, preview, resultStatus, saveButton, actionSelect, actionHint, previewButton;
   let editorGeneration=0,startOverButton;
+  let nativeSaveConfirm,nativeSaveOperation=null;
   let actionMode = 'definition', selectedLoopId = '', loopChooser, loadLoopButton, loopChoicesSignature = '';
   let loadingLoop = false, checkingLoops = false, loopLoader, loopLoaderHint, loopDiagnostics;
   const loopContentCache = new Map();
@@ -380,7 +381,7 @@
 
   function filterStats(rows){return (rows||[]).reduce((total,row)=>{if(row.rules){const nested=filterStats(row.rules);total.groups+=1+nested.groups;total.rules+=nested.rules;}else total.rules++;return total;},{groups:0,rules:0});}
   function changed() {
-    refreshKey();previewSequence++;preview.replaceChildren();preview.removeAttribute('aria-busy');resultStatus.textContent='Preview is out of date. Run it to see matching content.';
+    cancelNativeSave(false);refreshKey();previewSequence++;preview.replaceChildren();preview.removeAttribute('aria-busy');resultStatus.textContent='Preview is out of date. Run it to see matching content.';
     try {
       output = Q.compile(state); code.textContent = output.php;
       const terms = state.source === 'wp-terms', mainQuery = state.source === 'main-query';
@@ -428,26 +429,28 @@
     renderSourceOptions(form);
     const top = el('div', 'aside-title'); top.append(el('h2', '', 'Your loop'), el('span', 'live-dot', 'Live output')); aside.append(top);
     summary = el('p', 'query-summary'); aside.append(summary);
-    const bar=el('div','code-bar');bar.append(el('span','code-label','PHP query arguments'),button('Copy code',async event=>{
+    const bar=el('div','code-bar');bar.append(el('span','code-label','PHP query arguments'),button('Copy for Etch',async event=>{
       const control=event.currentTarget;
-      try {
-        if(!output)throw Error('Fix the query before copying.');
-        await navigator.clipboard.writeText(code.textContent);
-        control.textContent='Copied';notify('PHP query copied to clipboard. Paste it into Etch’s Loop Manager.');
-        setTimeout(()=>{if(control.isConnected)control.textContent='Copy code';},1800);
-      } catch(error) {
-        code.focus();const selection=window.getSelection(),range=document.createRange();range.selectNodeContents(code);selection.removeAllRanges();selection.addRange(range);
-        notify(output?'Select the output and copy it with your keyboard.':'Fix the query before copying.',true);
+      if(!output){notify('Fix the query before copying.',true);return;}
+      const text=Q.etchBody(output);
+      if(!text.trim()){notify('This query has no argument entries to copy. Use Main Query directly in Etch.');return;}
+      shadow.querySelector('.etch-copy-fallback')?.remove();
+      try{
+        await navigator.clipboard.writeText(text);control.textContent='Copied';notify('Argument entries copied. Paste inside Etch’s existing $query_args array. Manual paste does not reload the editor.');
+        setTimeout(()=>{if(control.isConnected)control.textContent='Copy for Etch';},1800);
+      }catch(_){
+        const fallback=el('textarea','etch-copy-fallback');fallback.value=text;fallback.readOnly=true;fallback.setAttribute('aria-label','Query entries to copy into Etch');bar.after(fallback);fallback.focus();fallback.select();notify('Copy the selected entries with your keyboard, then paste inside Etch’s existing $query_args array.');
       }
     }));
+    aside.append(el('p','hint','Copy for Etch omits the $query_args assignment and outer brackets. Paste inside Etch’s existing array. Manual paste does not reload the editor.'));
     code=el('pre','code');code.tabIndex=0;code.setAttribute('role','region'); code.setAttribute('aria-label', 'Generated query'); aside.append(bar, code);
     message = el('p', 'notice'); message.id='lfe-message';message.setAttribute('role', 'status');message.setAttribute('aria-atomic','true'); message.setAttribute('aria-live', 'polite'); aside.append(message);
     const actions = el('div', 'actions');
-    actionSelect = select([['definition','Save query in Loop Manager'],['create','Insert new loop element'],['bind','Apply query to selected loop']], actionMode, v => { actionMode = v; refreshActions(); });
+    actionSelect = select([['definition','Save query in Loop Manager'],['create','Insert new loop element'],['bind','Apply query to selected loop']], actionMode, v => { cancelNativeSave(false);actionMode = v; refreshActions(); });
     saveButton = button('Add query to Loop Manager', () => addToEtch(actionMode), 'primary');
     actionHint=el('p','hint');actionHint.id='lfe-action-hint';saveButton.setAttribute('aria-describedby',actionHint.id);
     actionSelect.setAttribute('aria-describedby',actionHint.id);
-    actions.append(field('Etch action',actionSelect),actionHint,saveButton);aside.append(actions);
+    nativeSaveConfirm=el('section','native-save-confirm');nativeSaveConfirm.hidden=true;nativeSaveConfirm.setAttribute('aria-label','Save and reload required');actions.append(field('Etch action',actionSelect),actionHint,saveButton,nativeSaveConfirm);aside.append(actions);
     const previewHeader = el('div', 'aside-title preview-header');previewButton=button('Run preview',runPreview);previewHeader.append(el('h2', '', 'Sample record'),previewButton); aside.append(previewHeader);
     resultStatus=el('p','hint');resultStatus.setAttribute('role','status');resultStatus.setAttribute('aria-atomic','true');aside.append(resultStatus);preview=el('div','preview');aside.append(preview);
     if (state.source === 'wp-terms') {
@@ -513,7 +516,7 @@
     return card;
   }
   function createQueryTabs(form) {
-    const specs=[['query','Query',0],...(['wp-users','wp-terms'].includes(state.source)?[]:[['tax','Taxonomies',state.tax.length+activeTaxonomyShortcuts().length]]),['meta','Meta data',state.meta.length+metaSettingKeys().filter(key=>optionState(key).enabled).length],...(state.source==='wp-terms'?[]:[['dates','Dates',(state.dates?.length||0)+activeDateParts().length]]),...(['wp-query','main-query'].includes(state.source)?[['more','More',0]]:[]),['advanced','Advanced',advancedGroups().reduce((total,g)=>total+g.keys.filter(key=>optionState(key).enabled).length,0)]];
+    const specs=[['query','Query',0],...(['wp-users','wp-terms'].includes(state.source)?[]:[['tax','Taxonomies',state.tax.length+activeTaxonomyShortcuts().length]]),['meta','Meta data',state.meta.length+metaSettingKeys().filter(key=>optionState(key).enabled).length],...(state.source==='wp-terms'?[]:[['dates','Dates',(state.dates?.length||0)+activeDateParts().length]]),['advanced','Advanced',advancedGroups().reduce((total,g)=>total+g.keys.filter(key=>optionState(key).enabled).length,0)],...(['wp-query','main-query'].includes(state.source)?[['more','More',0]]:[])];
     if(!specs.some(([key])=>key===activeQueryTab))activeQueryTab='query';
     const panels={},controls={},list=el('div','query-tabs');list.style.setProperty('--lfe-tab-count',String(specs.length));list.setAttribute('role','tablist');list.setAttribute('aria-label','Query settings');
     if(activeQueryTab==='tax'&&!content.allTaxonomies.length)activeQueryTab='query';
@@ -688,6 +691,7 @@
     savedLoopsLoading=true;savedLoopsError='';
     try{
       const data=await request('loops');
+      if(data.migration?.errors?.length)savedLoopsError=data.migration.errors.length+' older queries could not be migrated safely. Their definitions were kept; inspect the migration backup and resolve these warnings before deactivating. '+data.migration.errors.map(item=>item.id+': '+item.message).join(' ');
       if(!data?.loops||typeof data.loops!=='object')throw Error('The saved query response was not valid.');
       savedLoops=data.loops;savedLoopsLoaded=true;
     }catch(error){savedLoopsError='Saved queries could not be loaded: '+error.message+' Check that Looper’s WordPress REST endpoint is accessible, then use Refresh loops.';}
@@ -750,12 +754,11 @@
     const selectionProblem=selectedLoopProblem(api,selected);
     let runtimeMissing=false;try{runtimeMissing=!!existing&&!Object.hasOwn(api?.loops?.getAll?.()||{},existing[0]);}catch(_){runtimeMissing=true;}
     const same=!!(existing&&output&&sameDefinition({...existing[1],...currentDefinition()},existing[1]));
-    const update=!!existing&&!same;
     const keyPending=state.keyMode==='auto'&&!savedLoopsLoaded&&!runtimeLoopsReady;
-    const enabled=!!output&&!keyPending&&!apiLimitReason()&&!busy&&!loadingLoop&&typeof api?.loops?.add==='function'&&api.environment?.capabilities?.loops!==false;
-    const labels={definition:existing?(same?'Query already in Loop Manager':'Update query in Loop Manager'):'Add query to Loop Manager',create:update?'Update and insert loop element':'Insert loop element',bind:update?'Update and apply to selected loop':'Apply to selected loop'};
+    const enabled=!!output&&!keyPending&&!apiLimitReason()&&!busy&&!loadingLoop&&typeof api?.saveAsync==='function'&&api.environment?.capabilities?.loops!==false;
+    const labels={definition:existing?(same?'Query already in Loop Manager':'Update query in Loop Manager'):'Add query to Loop Manager',create:'Insert loop element',bind:'Apply to selected loop'};
     saveButton.textContent=busy?'Working…':labels[actionMode];
-    saveButton.disabled=!enabled||runtimeMissing||(update&&typeof api?.loops?.update!=='function')||(actionMode==='definition'&&same)||(actionMode==='create'&&typeof api?.blocks?.create!=='function')||(actionMode==='bind'&&(!!selectionProblem||typeof api?.loops?.setForBlock!=='function'));
+    saveButton.disabled=!!nativeSaveOperation||!enabled||runtimeMissing||(actionMode==='definition'&&same)||(actionMode==='create'&&typeof api?.blocks?.create!=='function')||(actionMode==='bind'&&(!!selectionProblem||typeof api?.loops?.setForBlock!=='function'));
     actionSelect.disabled=busy||loadingLoop;
     const help={definition:'Adds or updates the query in Etch’s Loop Manager. It does not add content to the page.',create:'Adds a new loop to the page with starter title and link content, using this query.',bind:'Applies to the exact loop element selected in Etch, including an inner or outer loop. Its content, variable names, and argument overrides are kept. Supports WP Query, WP Terms, WP Users, and Main Query, not JSON.'};
     let detail=help[actionMode];if(keyPending)detail+=' Checking existing query keys before creating a new one. If discovery fails, use Refresh loops.';
@@ -766,51 +769,98 @@
       if(name)detail+=' Selected: '+name+'.';
       if(selectionProblem)detail+=' '+selectionProblem;
     }
-    if(output&&Q.needsBridge(output))detail+=' These query settings are managed by Looper; keep Looper active.';
-    else if(output?.type==='wp-query'&&output.args.post_type==='attachment'&&['post_mime_type','post_parent'].some(key=>key in output.native)||output?.args.orderby==='collection_order')detail+=' These gallery settings are managed by Looper; keep Looper active.';
     if(!api?.loops)detail='The Etch editing API is not available in this editor. You can still load saved queries, preview, and copy PHP. Update Etch to enable direct save and insertion.';
     if(runtimeMissing&&api?.loops)detail+=' This query has been found in WordPress, but Etch has not loaded it into this editor yet. Save any editor changes and reload Etch before updating it.';
-    actionHint.textContent=(apiLimitReason()||detail)+' Use Etch Save to persist editor changes.';
+    actionHint.textContent=(apiLimitReason()||detail)+' Use Etch Save to keep editor changes. Some settings require confirmation to save and reload. Copy for Etch lets you paste manually without reloading.';
+  }
+  const pendingActionKey='looper-native-action:'+location.href;
+  const loopBinding=block=>Object.fromEntries(['type','loopId','target','itemId','indexId','loopParams'].filter(key=>Object.hasOwn(block||{},key)).map(key=>[key,block[key]]));
+  function insertOrBind(api,mode,loopId,type,name,selected,binding){
+    if(mode==='bind'){
+      const current=api.blocks.getJson(selected);
+      if(!current||!equal(loopBinding(current),binding))throw Error('The selected element changed. Select the intended loop and apply the saved query again.');
+      const problem=selectedLoopProblem(api,current);if(problem)throw Error(problem);
+      api.loops.setForBlock(selected,{loopId,target:'',itemId:binding.itemId||'item',indexId:binding.indexId||'index',loopParams:binding.loopParams||{}});
+    }
+    if(mode==='create'){
+      const text={type:'etch/text',version:1,context:{},children:[],text:type==='wp-users'?'{item.displayName}':type==='wp-terms'?'{item.name}':'{item.title}'};
+      const id=api.blocks.create({type:'etch/loop',version:1,context:{name},children:[{type:'etch/element',version:1,context:{name:'Loop item'},tag:type==='wp-terms'?'div':'article',attributes:{},children:[{type:'etch/element',version:1,context:{},tag:'h2',attributes:{},children:[{type:'etch/element',version:1,context:{},tag:'a',attributes:{href:type==='wp-users'?'{item.userUrl}':type==='wp-terms'?'{item.permalink}':'{item.permalink.relative}'},children:[text]}]}]}],itemId:'item',indexId:'index',loopId},null);
+      api.blocks.select(id);
+    }
+  }
+  function clearContinuation(){try{sessionStorage.removeItem(pendingActionKey);}catch(_){}}
+  function cancelNativeSave(focus=false){nativeSaveOperation=null;if(nativeSaveConfirm){nativeSaveConfirm.hidden=true;nativeSaveConfirm.replaceChildren();}if(focus){refreshActions();notify('Cancelled. No editor changes were saved or reloaded.');saveButton.focus();}}
+  function offerNativeSave(operation){
+    nativeSaveOperation=operation;nativeSaveConfirm.hidden=false;
+    const accept=button('Save changes and reload',()=>saveNativeQuery(operation),'primary');
+    nativeSaveConfirm.replaceChildren(el('h3','','Save and reload required'),el('p','hint','Etch’s public add/update API cannot safely save every setting in this definition. Looper can save it directly, then reload to refresh Etch’s query list. This saves all current editor changes first. Continue?'),el('p','hint','To avoid reloading, cancel and use Copy for Etch. Paste the copied entries inside Etch’s existing $query_args array in Loop Manager. Manual paste does not require a reload.'),accept,button('Cancel',()=>cancelNativeSave(true)));
+    refreshActions();notify('This query requires a reload. Review the save confirmation below.');accept.focus();
   }
   async function addToEtch(mode) {
-    let loopId,blockId,original,created=false,updated=false,selected,binding,bindingChanged=false;
     const api=window.etch;
     try {
-      if(busy)return;refreshKey();
+      if(busy)return;cancelNativeSave(false);refreshKey();
       const result=Q.compile(state);
       if(apiLimitReason())throw Error(apiLimitReason());
       if(!state.name.trim())throw Error('Enter a name and a key starting with a letter.');
       const retainedKey=state.savedKey===state.key;
       if(!(retainedKey?/^[a-zA-Z][a-zA-Z0-9_-]*$/:/^[a-zA-Z][a-zA-Z0-9_]*$/).test(state.key))throw Error('Use a camelCase loop key starting with a letter, such as newQuery2. Existing keys can be retained by loading their saved query.');
+      let selected=null,binding=null;
       if(mode==='bind'){
-        selected=api.blocks.getSelectedId();binding=selected&&api.blocks.getJson(selected);
-        const problem=selectedLoopProblem(api,binding);if(problem)throw Error(problem);
+        selected=api.blocks.getSelectedId();const block=selected&&api.blocks.getJson(selected);
+        const problem=selectedLoopProblem(api,block);if(problem)throw Error(problem);binding=loopBinding(block);
       }
-      const definition=currentDefinition(result),existing=matchingLoop(api);
-      busy=true;refreshActions();
-      if(existing){
-        loopId=existing[0];original=JSON.parse(JSON.stringify(existing[1]));
-        if(!sameDefinition({...original,...definition},original)){updated=true;api.loops.update(loopId,{...original,...definition});}
-      }else{loopId=api.loops.add(definition);created=true;}
-      const persisted=api.loops.getAll()[loopId]?.config;
-      if((created||updated)&&!equal(persisted,definition.config))throw Error('Etch’s Public API changed the query arguments. Copy the PHP output into Etch’s Loop Manager to retain the full query.');
-      if(mode==='bind'){bindingChanged=true;api.loops.setForBlock(selected,{loopId,target:'',itemId:binding.itemId||'item',indexId:binding.indexId||'index',loopParams:binding.loopParams||{}});}
-      if(mode==='create'){
-        const text={type:'etch/text',version:1,context:{},children:[],text:result.type==='wp-users'?'{item.displayName}':result.type==='wp-terms'?'{item.name}':'{item.title}'};
-        blockId=api.blocks.create({type:'etch/loop',version:1,context:{name:state.name},children:[{type:'etch/element',version:1,context:{name:'Loop item'},tag:result.type==='wp-terms'?'div':'article',attributes:{},children:[{type:'etch/element',version:1,context:{},tag:'h2',attributes:{},children:[{type:'etch/element',version:1,context:{},tag:'a',attributes:{href:result.type==='wp-users'?'{item.userUrl}':result.type==='wp-terms'?'{item.permalink}':'{item.permalink.relative}'},children:[text]}]}]}],itemId:'item',indexId:'index',loopId},null);
-        api.blocks.select(blockId);
+      const draft=currentDefinition(result),existing=matchingLoop(api),original=existing?existing[1]:null;
+      const definition={...(original||{}),...draft,config:{...(original?.config||{}),...draft.config}};
+      const before=api.loops.getAll(),editing=!existing||!sameDefinition(definition,original);let id=existing?.[0],created=false;
+      try{
+        // Preserve future/third-party definition properties through native storage.
+        if(editing&&original&&(Object.keys(original).some(key=>!['key','name','global','config'].includes(key))||Object.keys(original.config||{}).some(key=>!['type','args'].includes(key))))throw Error('This definition contains additional saved properties.');
+        if(!existing){id=api.loops.add(definition);created=true;}
+        else if(editing)api.loops.update(id,definition);
+        if(!equal(api.loops.getAll()[id],editing?definition:original))throw Error('Etch changed the query settings.');
+      }catch(error){
+        if(!equal(api.loops.getAll(),before)){
+          try{if(created&&id)api.loops.delete(id);else if(existing)api.loops.update(id,original);}catch(_){}
+          if(!equal(api.loops.getAll(),before))throw Error('Etch changed the query settings and they could not be restored. Reload the editor without saving before trying again.');
+        }
+        offerNativeSave({mode,id:existing?.[0]||'looper'+crypto.randomUUID().replace(/-/g,''),definition,draft,expected:original,type:result.type,name:definition.name,selected,binding});return;
       }
-      if(state.keyMode==='auto')state.keyMode='saved';state.savedKey=state.key;refreshKey();
-      const outcome=mode==='create'?'Loop element inserted':mode==='bind'?'Definition applied to the selected loop':updated?'Loop definition updated':'Loop definition added';
-      notify(outcome+'. Use Etch Save to persist your editor changes.');
-    }catch(error){
-      let cleanup='';
-      if(blockId){try{api.blocks.delete(blockId);}catch(_){cleanup=' A partial loop element remains in the editor; remove it or undo before saving.';}}
-      if(bindingChanged&&binding){try{api.loops.setForBlock(selected,{loopId:binding.loopId,target:binding.target,itemId:binding.itemId,indexId:binding.indexId,loopParams:binding.loopParams});}catch(_){cleanup+=' The selected loop binding could not be restored.';}}
-      if(created&&loopId){try{api.loops.delete(loopId);}catch(_){cleanup+=' The new definition remains in the editor.';}}
-      else if(updated&&original){try{api.loops.update(loopId,original);}catch(_){cleanup+=' The previous definition could not be restored.';}}
-      notify(error.message+cleanup,true);
-    }finally{busy=false;refreshActions();}
+      state.savedKey=state.key;if(state.keyMode==='auto')state.keyMode='saved';
+      try{insertOrBind(api,mode,id,result.type,definition.name,selected,binding);}
+      catch(error){throw Error('The query is in the editor, but the element action failed: '+error.message+' Review it before using Etch Save.');}
+      notify((mode==='create'?'Loop element inserted':mode==='bind'?'Query applied to the selected loop':existing?'Query updated in Loop Manager':'Query added to Loop Manager')+'. Use Etch Save to keep these changes.');refreshActions();
+    }catch(error){notify(error.message,true);refreshActions();}
+  }
+  async function saveNativeQuery(operation){
+    const api=window.etch;let locked=[],editorSaved=false;
+    try{
+      if(busy||nativeSaveOperation!==operation)return;
+      if(!equal(currentDefinition(),operation.draft))throw Error('The form changed. Review the query and choose the action again.');
+      if(operation.mode==='bind'&&(api.blocks.getSelectedId()!==operation.selected||!equal(loopBinding(api.blocks.getJson(operation.selected)),operation.binding)))throw Error('The selected loop changed. Select the intended element and apply the query again.');
+      const {mode,id,type,name,selected,binding}=operation;
+      const pending={mode,id,type,name,selected,binding,expires:Date.now()+120000};
+      sessionStorage.setItem(pendingActionKey,JSON.stringify(pending));clearContinuation();
+      cancelNativeSave(false);busy=true;refreshActions();locked=[...shell.querySelectorAll('input,select,button')].filter(node=>node.textContent!=='Close').map(node=>[node,node.disabled]);locked.forEach(([node])=>{node.disabled=true;});notify('Saving Etch editor changes before saving the native query…');
+      await api.saveAsync();editorSaved=true;
+      const response=await request('native-query',{id,definition:operation.definition,expected:operation.expected});
+      if(response.id!==id||!equal(response.definition,operation.definition))throw Error('The native query save could not be verified.');
+      sessionStorage.setItem(pendingActionKey,JSON.stringify(pending));notify('Native query saved. Reloading the editor…');location.reload();
+    }catch(error){clearContinuation();notify(error.message+(editorSaved?' Current Etch editor changes were saved. Refresh the editor before trying again.':''),true);}
+    finally{locked.forEach(([node,disabled])=>{node.disabled=disabled;});busy=false;refreshActions();}
+  }
+  function resumeNativeAction(){
+    let pending;try{pending=JSON.parse(sessionStorage.getItem(pendingActionKey)||'null');sessionStorage.removeItem(pendingActionKey);}catch(_){return;}
+    if(!pending||!Number.isFinite(pending.expires)||pending.expires<Date.now()||pending.expires>Date.now()+120000||!['definition','create','bind'].includes(pending.mode)||typeof pending.id!=='string')return;
+    let attempts=0;const timer=setInterval(()=>{
+      const api=window.etch,loop=api?.loops?.getAll?.()[pending.id];
+      if(!loop){if(++attempts<120)return;clearInterval(timer);open();notify('The native query was saved, but Etch has not loaded it. Refresh before inserting or applying it.',true);return;}
+      clearInterval(timer);open();
+      try{
+        insertOrBind(api,pending.mode,pending.id,pending.type,pending.name,pending.selected,pending.binding);
+        notify(pending.mode==='definition'?'Native query saved in Etch’s Loop Manager. It works with Looper deactivated.':'Native query saved. '+(pending.mode==='create'?'Loop element inserted.':'Query applied to the selected loop.')+' Review the element, then use Etch Save.');
+      }catch(error){notify('The query was saved. '+error.message,true);}
+    },250);
   }
   function sampleTree(sample){
     const wrap=el('section','sample-data');wrap.append(el('h3','','Dynamic fields'),el('p','hint','Copy a key to use it inside this loop. Uses item as the loop variable; replace it if your loop uses another name. Expand objects and arrays to see nested values.'));
@@ -882,6 +932,6 @@
   }
   // Drafts live only in this editor session. Discard legacy persisted drafts.
   try{localStorage.removeItem('looper-for-etch:'+location.origin);}catch(_){}
-  window.looperForEtch = { open, close }; render(); loadContent();loadSavedLoops();
+  window.looperForEtch = { open, close }; render(); loadContent();loadSavedLoops();resumeNativeAction();
   setInterval(() => { if (!host.hidden && content && saveButton) refreshActions(); }, 1000);
 })();

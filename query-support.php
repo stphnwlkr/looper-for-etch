@@ -22,35 +22,6 @@ function lfe_valid_query( $args, $type ) {
     return $walk( $args );
 }
 
-function lfe_decode_query_carrier( $args, $type ) {
-    $encoded = null;
-    if ( 'wp-terms' === $type && is_string( $args['taxonomy'] ?? null ) && str_starts_with( $args['taxonomy'], '_looper_etch_v2:' ) ) {
-        $encoded = explode( '|', substr( $args['taxonomy'], 16 ) )[0];
-    } elseif ( is_array( $args['meta_query'] ?? null ) ) {
-        foreach ( $args['meta_query'] as $row ) {
-            if ( is_array( $row ) && '_looper_etch_v2' === ( $row['key'] ?? '' ) ) { $encoded = $row['value'] ?? null; break; }
-        }
-    }
-    if ( ! is_string( $encoded ) || strlen( $encoded ) > 110000 || ! preg_match( '/^[A-Za-z0-9_-]+$/', $encoded ) ) { return $args; }
-    $decoded = json_decode( base64_decode( strtr( $encoded, '-_', '+/' ), true ) ?: '', true );
-    return lfe_valid_query( $decoded, $type ) ? $decoded : $args;
-}
-
-// Expand before Etch extracts defaults and resolves loop parameters. The complete
-// definition travels in Etch's own saved loop, with no separate registry to sync.
-function lfe_expand_saved_queries( $loops ) {
-    if ( ! is_array( $loops ) ) { return $loops; }
-    foreach ( $loops as &$loop ) {
-        $type = $loop['config']['type'] ?? '';
-        if ( in_array( $type, array( 'wp-query', 'main-query', 'wp-users', 'wp-terms' ), true ) && is_array( $loop['config']['args'] ?? null ) ) {
-            $loop['config']['args'] = lfe_decode_query_carrier( $loop['config']['args'], $type );
-        }
-    }
-    unset( $loop );
-    return $loops;
-}
-add_filter( 'option_etch_loops', 'lfe_expand_saved_queries', 1 );
-
 function lfe_sample_data( $object ) {
     if ( ! trait_exists( '\Etch\Traits\DynamicData' ) ) { return null; }
     $reader = new class {
@@ -74,13 +45,6 @@ function lfe_relationship_query_problem( $args ) {
     return null;
 }
 
-// A missing relationship provider must not broaden a saved query to all posts.
-add_action( 'parse_query', function ( $query ) {
-    $relationship = $query->get( 'relationship' );
-    if ( ! is_array( $relationship ) || ! isset( $relationship['id'] ) ) { return; }
-    if ( lfe_relationship_query_problem( array( 'relationship' => $relationship ) ) ) { $query->set( 'post__in', array( 0 ) ); $query->set( 'relationship', null ); }
-}, 0 );
-
 function lfe_expanded_preview( $request ) {
     $input = $request->get_json_params(); $args = $input['args'] ?? null; $type = $input['type'] ?? 'wp-query'; $sample = ! empty( $input['sample'] );
     if ( 'main-query' === $type ) { return new WP_Error( 'template_preview', 'Preview Main Query on its archive or search page in Etch. The results depend on that page.', array( 'status' => 400 ) ); }
@@ -100,7 +64,7 @@ function lfe_expanded_preview( $request ) {
         $args['posts_per_page'] = $requested < 1 ? $limit : min( $limit, $requested );
         $args['nopaging'] = false; unset( $args['posts_per_archive_page'] );
         $args['no_found_rows'] = true; $args['update_post_meta_cache'] = false; $args['update_post_term_cache'] = false;
-        // Preview always runs filters, including the gallery compatibility filter.
+        // Preview always runs filters, including third-party query extensions.
         $args['suppress_filters'] = false;
         $objects = ( new WP_Query( $args ) )->posts;
         foreach ( $objects as $post ) {

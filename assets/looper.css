@@ -84,3 +84,7 @@ button.remove-action:focus-visible{outline:3px solid #93baff;outline-offset:3px}
 .form{container-type:inline-size;container-name:looper-form}.option-row{grid-template-columns:180px minmax(0,1fr) 104px}.option-row>.field>span{min-width:0}.option-row>.field:last-child>span{white-space:nowrap}
 @container looper-form (max-width:500px){.option-row{grid-template-columns:160px minmax(0,1fr) 104px}}
 @container looper-form (max-width:420px){.option-row{grid-template-columns:minmax(0,1fr) 104px}.option-row>.field:first-child{grid-column:1/-1;padding-top:0}.option-row>.field:last-child,.option-row>.fixed-option{grid-column:2}.option-row>.option-value{grid-column:1}.option-row{row-gap:5px;margin-block:18px}}
+
+.native-save-confirm { grid-column: 1 / -1; margin-top: 1rem; padding: 1rem; border: 1px solid #759fe9; border-radius: .5rem; background: #20242c; }
+.native-save-confirm h3 { margin: 0 0 .5rem; }
+.native-save-confirm button { margin-top: .5rem; }

@@ -1,4 +1,4 @@
-# 0.8.0 validation
+# 0.9.0 validation
 
 Review date: 2026-10-27.
 
@@ -11,7 +11,7 @@ Removed Execution, cache and total-count flags, return formats, comment paginati
 ## Security and WordPress
 
 - PHP syntax checks pass for all runtime PHP files.
-- Query/compiler, import/export, editor-action/readback/rollback, nested UI, and native-toolbar tests pass.
+- Query/compiler, import/export, native editor-action/save/refresh, nested UI, and native-toolbar tests pass.
 - Real WordPress REST tests reject anonymous and low-privilege calls, user discovery without list_users, invalid cookie nonces, malformed/disallowed query arguments, and unassigned taxonomy lookups. Authenticated sample output is bounded to one record. Temporary users and roles are removed after testing.
 - Metadata-key queries use prepared identifiers/values, bounded results, and caching. The read-only editor routing flag does not change data and remains capability-protected.
 - Official WordPress Plugin Check reports one distribution-specific finding: plugin_updater_detected. Custom Update URI handling is intentionally used for GitHub distribution and is not permitted for WordPress.org-hosted plugins. No other findings remained in the reviewed production package.
@@ -32,6 +32,10 @@ Verified against the published 0.8.0 GitHub release: WordPress offered 0.8.0 to 
 
 Follow-up verification for 0.8.1: the standard WordPress bulk upgrader installed the public 0.8.1 package from an installation marked 0.8.0. A post-download hook confirmed the checksum-verified temporary file, the plugin remained active, and all 21 saved definitions were unchanged. The single-item low-level upgrader API was also exercised; outside the browser it requires its caller to complete reactivation, so the activation-preservation check uses the normal bulk-upgrade path.
 
-## Native-query dependency investigation
+## Native-query storage, migration and deactivation
 
-A subsequent 20-case test saved definitions through Etch’s native REST endpoint, then executed and rendered them as an anonymous visitor with the Looper plugin entirely skipped. All cases passed. This establishes a path toward an editor-only Looper; it does not remove the current release’s compatibility-format dependency or migrate existing saved definitions. See NATIVE-RUNTIME.md.
+Legacy v1 gallery and v2 post, term, user and Main Query definitions migrate to native Etch arguments. Integration tests verified backups, idempotency, unknown-property and parameter preservation, corrupt-payload warnings, stale-definition rejection and atomic registry conflicts. The local site's 21 existing definitions were already native and were retained.
+
+Twenty encoded runtime fixtures were migrated, then Looper was actually deactivated. Every query executed and every Etch loop block rendered the expected records as an anonymous visitor. Coverage includes nested filters, argument defaults/overrides, attachments/collections, terms/users, Main Query and provider-backed relationships. Temporary fixtures were removed and Looper reactivated.
+
+Copy for Etch was checked to exclude the assignment and outer brackets while retaining nested sorting arrays. The browser no-reload path, confirmation/cancellation flow, and confirmed save/edit/reload workflow were exercised. The reload path preserved a changed Count argument and nested metadata groups, including a subsequent Etch Save. Public action tests cover saving editor changes before native writes, failure/conflict handling, insertion/application after refresh, nested-loop preservation, and continuation expiry. See NATIVE-RUNTIME.md for workflow and limits.

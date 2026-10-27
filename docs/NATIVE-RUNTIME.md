@@ -1,14 +1,26 @@
-# Native Etch query testing and current dependency
+# Native Etch queries: migration and deactivation
 
-## For people testing Looper
+## What happens without Looper
 
-**Keep Looper active when testing the current release.** Removing it does not delete your content, layouts, or saved queries. It removes the builder and preview tools, the code that reads Looper's special saved-query format, and its extra missing-relationship-provider safeguard. Queries using that special format may stop showing results until converted. Ordinary native Etch definitions continue working.
+Queries saved by 0.9.0 are native Etch definitions. Deactivating or uninstalling Looper removes its visual builder, sample preview, and dynamic-key copying tools. It does not remove content, layouts or queries, or stop their rendering. Etch and any plugins providing relationship/gallery features are still required for their own functionality. Looper no longer installs query-decoding or missing-provider hooks for visitors.
 
-The current public release is 0.8.1. It does not automatically migrate compatibility definitions to native ones. No frontend-removal change is included in the documentation update that adds this explanation.
+Older compatibility definitions convert automatically during an authenticated administrator visit to WordPress admin or the Etch editor. The migration keeps the first pre-migration registry snapshot in the current site's non-autoloaded `lfe_native_query_backup_v1` option. It preserves IDs, keys, names, scope, parameter expressions, nested/named filters and unknown definition/configuration properties. Invalid payloads remain untouched and produce an editor warning; resolve that warning before deactivating. The conversion is idempotent, with atomic conflict detection and readback.
+
+The local site's 21 existing definitions were already native: no conversion was needed, and none was removed. Separate legacy fixtures exercised both v1 gallery and v2 post, term, user and Main Query formats, including corrupt-payload handling and stale-write rejection.
+
+## Saving from the editor
+
+Looper first uses Etch's public add/update API and checks that the definition is preserved. Accepted native queries update the editor without reloading or automatically saving the page; use Etch Save to persist them. Inserting/applying an unchanged existing query also avoids a reload.
+
+Etch's frontend accepts some argument shapes that its JavaScript validator rejects. If the API rejects a definition without changing the registry, Looper offers **Save changes and reload** and **Cancel**. It saves no editor changes before confirmation. Confirming uses Etch's public `saveAsync`, writes one native definition through its protected endpoint, and reloads. This prevents a stale editor registry overwriting the saved query on a later Etch Save. Definitions with unknown additional properties also use this path when edited so those properties can be retained.
+
+After a confirmed reload, insert/apply actions resume once against the native registry, preserving content, variable names and argument overrides. Review the element and use Etch Save to persist that element change. No encoded query or separate runtime registry is written. The short-lived browser continuation contains the action, query reference and selected-loop binding snapshot, expires after two minutes, and is not a saved form draft. Cancel leaves the form and editor unchanged.
+
+Browser verification loaded a migrated nested-meta query, changed Count to `$count ?? 9`, saved it, reloaded it in Looper, and used Etch Save again. The argument and nested AND/OR, IN and NOT EXISTS filters remained present. Fresh forms clear after refresh.
 
 ## What was tested
 
-Environment: Etch 1.7.1 on WordPress 7.2-beta1 with PHP 8.4.27. The test request used WordPress CLI's `--skip-plugins=looper-for-etch`, and asserted that Looper was not loaded. It saved native definitions through Etch's own `/etch-api/loops` endpoint, switched to an anonymous visitor, and checked both query results and rendered Etch loop output.
+Environment: Etch 1.7.1 on WordPress 7.2-beta1 with PHP 8.4.27. The final test created 20 disposable definitions in the old encoded format, migrated them with Looper 0.9.0, then actually deactivated the plugin. A separate request asserted that Looper was inactive and its code absent, switched to an anonymous visitor, and checked both query results and rendered Etch loop HTML. Looper was reactivated afterward.
 
 All 20 cases passed:
 
@@ -32,16 +44,8 @@ All 20 cases passed:
 
 Some bullets combine multiple cases. All temporary posts, attachments, terms, users, relationship records, and query definitions were removed. The original saved definitions were restored unchanged.
 
-## What the API investigation found
+## Coverage limits
 
-The installed JavaScript API's exact validator and its bundled dependencies were exercised separately. Extra argument keys are preserved, matching the documented open-ended argument objects. Earlier assumptions that arbitrary extra keys were stripped were incorrect.
+The deactivation matrix and browser round trip passed on the environment above. Public JavaScript tests cover native action sequencing, failures, stale edits, selected-loop preservation and continuation expiry. `tests/native-wordpress.php` covers migration, backups, unknown properties, permissions and atomic conflict handling on a local WordPress installation.
 
-Some recognized properties have narrower validation for their value shapes. Examples include nested taxonomy/meta groups, status arrays, sort-direction objects, term taxonomy arrays, user meta-key arrays, certain comparison operators, and taxonomy existence operators. Comma-separated statuses and meta NOT EXISTS with an unused value can pass the validator without a frontend workaround.
-
-Etch's native REST storage and frontend handlers accepted the full native definitions in the 20-case matrix. The remaining issue is how Looper submits and preserves those definitions in the editor, rather than a requirement for Looper to execute those query features on the frontend.
-
-## What has not changed
-
-The released plugin still writes compatibility definitions for some queries. These results do not make existing compatibility definitions safe to use after deactivating Looper. A future implementation must change the editor save path, migrate existing definitions safely, and verify the complete save/edit/deactivation workflow before claiming Looper can be removed after setup.
-
-Meta Box and Media Bridge remain required for their own query extensions. Full multisite and browser/version matrices remain outside this investigation.
+A full multisite, minimum-version and cross-browser matrix has not been completed. Meta Box Relationships and Media Bridge were active for their own feature tests. Ordinary WordPress behavior applies if one of those providers is removed; Looper no longer intercepts those queries.
