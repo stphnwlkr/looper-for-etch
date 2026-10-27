@@ -29,3 +29,5 @@ See ACCESSIBILITY.md for the accessibility checks and remaining coverage limits.
 ## Native update verification
 
 Verified against the published 0.8.0 GitHub release: WordPress offered 0.8.0 to an installation temporarily marked 0.7.9, then the standard WordPress plugin upgrader downloaded the versioned package, installed it, and reported a successful 0.7.9 → 0.8.0 update. The release asset checksum matched the public update manifest. The updated plugin remained active and every saved Etch definition was unchanged.
+
+Follow-up verification for 0.8.1: the standard WordPress bulk upgrader installed the public 0.8.1 package from an installation marked 0.8.0. A post-download hook confirmed the checksum-verified temporary file, the plugin remained active, and all 21 saved definitions were unchanged. The single-item low-level upgrader API was also exercised; outside the browser it requires its caller to complete reactivation, so the activation-preservation check uses the normal bulk-upgrade path.
