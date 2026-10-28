@@ -377,7 +377,7 @@
     if(!['wp-users','wp-terms'].includes(state.source)){panels.tax.append(filterGroup('tax'));const saved=savedTaxonomySettings();if(saved)panels.tax.append(saved);}
     panels.meta.append(filterGroup('meta'),metaSettings());if(panels.dates){panels.dates.append(dateOptions());const saved=savedDateSettings();if(saved)panels.dates.append(saved);}
     renderAdvancedOptions(panels.advanced);
-    if(['wp-query','main-query'].includes(state.source))panels.more.append(relationshipOptions(),customQueryGuide());
+    if(['wp-query','main-query'].includes(state.source))panels.more.append(facetOptions(),relationshipOptions(),customQueryGuide());
   }
 
   function filterStats(rows){return (rows||[]).reduce((total,row)=>{if(row.rules){const nested=filterStats(row.rules);total.groups+=1+nested.groups;total.rules+=nested.rules;}else total.rules++;return total;},{groups:0,rules:0});}
@@ -535,6 +535,22 @@
     card.append(el('p','hint','This list contains Meta Box relationship IDs. ACF and ACPT relationship fields use their own field keys.'));return card;
   }
 
+  function facetOptions(){
+    const card=el('section','card facet-options');card.append(el('h2','','Third-party facets'));
+    const grid=optionState('wp_grid_builder'),facet=optionState('facetwp');
+    card.append(check('Use WP Grid Builder',grid.enabled,on=>{optionWrite('wp_grid_builder',on?{enabled:true,value:grid.value||'wpgb-content-posts',parameter:false}:{enabled:false});render();}));
+    if(grid.enabled){
+      const selector=input(grid.value,value=>{optionWrite('wp_grid_builder',{value,parameter:false});changed();});selector.placeholder='wpgb-content-posts';
+      card.append(field('WP Grid Builder selector',selector),el('p','hint','Use the same selector as a CSS class on the direct parent of the loop and as the grid value in each WP Grid Builder facet shortcode. Enter it without a leading dot.'));
+    }
+    card.append(check('Enable FacetWP',facet.enabled&&[true,'true'].includes(facet.value),on=>{optionWrite('facetwp',on?{enabled:true,value:'true',parameter:false}:{enabled:false});render();}));
+    card.append(el('p','hint','For FacetWP, add facetwp-template to the direct parent of the loop. Place facet shortcodes outside that wrapper. Enable only one FacetWP query per page.'));
+    for(const[label,path]of [['WP Grid Builder setup','wp-grid-builder'],['FacetWP setup','facetwp']]){
+      const link=el('a','',label);link.href='https://docs.etchwp.com/facets/third-party-facets/'+path;link.target='_blank';link.rel='noopener noreferrer';const help=el('p','hint');help.append(link);card.append(help);
+    }
+    return card;
+  }
+
   function attachmentOptions(){
     const card=el('section','card');card.append(el('h2','','Media attachments'),el('p','hint','Queries Media Library files using Inherit status. Galleries stored as custom-field arrays are separate dynamic-data loops.'));
     card.append(optionRow('post_mime_type'),optionRow('post_parent'),el('p','hint','Use a parent ID to get files attached to that post. Parent 0 selects unattached files. A parent argument can be supplied from the current post or an outer loop.'));
@@ -572,7 +588,7 @@
     Object.values(panels).forEach(panel=>form.append(panel));activate(activeQueryTab);
     return panels;
   }
-  function customQueryGuide(){const guide=el('details','card custom-guide');guide.append(el('summary','','Supported query types'),el('p','hint','Looper builds WordPress post, attachment, term, user, and inherited Main Query loops. Use Dates for date filters and More for Meta Box relationships. Queries that require custom PHP callbacks, SQL, or return only IDs or counts cannot be edited here. JSON and dynamic-data arrays stay in Etch.'));return guide;}
+  function customQueryGuide(){const guide=el('details','card custom-guide');guide.append(el('summary','','Supported query types'),el('p','hint','Looper builds WordPress post, attachment, term, user, and inherited Main Query loops. Use Dates for date filters and More for third-party facets and Meta Box relationships. Queries that require custom PHP callbacks, SQL, or return only IDs or counts cannot be edited here. JSON and dynamic-data arrays stay in Etch.'));return guide;}
   function metaField(label, value, handler) {
     const id = 'lfe-meta-' + (++fieldSequence), n = input(value, handler); n.setAttribute('list', id);
     const wrap = field(label, n), list = el('datalist'); list.id = id;

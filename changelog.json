@@ -1,5 +1,19 @@
 [
   {
+    "version": "0.11.0",
+    "summary": "Simple WP Grid Builder and FacetWP query controls.",
+    "changes": {
+      "added": [
+        "WP Grid Builder toggle and selector field under More, generating the native wp_grid_builder query argument.",
+        "FacetWP checkbox under More, generating the native facetwp query argument.",
+        "Setup reminders and links for facet wrapper classes and shortcodes."
+      ],
+      "changed": [
+        "Load and preserve existing facet arguments in post and Main Query definitions."
+      ]
+    }
+  },
+  {
     "version": "0.10.0",
     "summary": "Optional loop field suggestions in the Etch HTML editor.",
     "changes": {

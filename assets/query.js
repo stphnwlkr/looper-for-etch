@@ -288,6 +288,9 @@
     else spec.help='An optional WordPress query setting for '+(source==='wp-users'?'users':source==='wp-terms'?'terms':'posts')+'. It changes how records are selected or returned; it is not a database field.';
   }
 
+  catalog['wp-query'].wp_grid_builder={type:'gridSelector',label:'WP Grid Builder selector'};
+  catalog['wp-query'].facetwp={type:'facetFlag',label:'FacetWP'};
+
   const clone=v=>JSON.parse(JSON.stringify(v));
   const specFor=source=>catalog[source==='main-query'?'wp-query':source];
   function literal(v){if(typeof v!=='string'||!v.startsWith('$'))return {value:v};const m=v.match(/^\$([a-zA-Z_]\w*)(?:\s*\?\?\s*(-?\d+(?:\.\d+)?|true|false|'(?:\\.|[^'\\])*'))?$/);if(!m)throw Error('Only a parameter name with a literal default is supported: '+v);let value='';if(m[2]!==undefined){if(m[2][0]==="'")value=m[2].slice(1,-1).replace(/\\(['\\])/g,'$1');else value=m[2]==='true'?true:m[2]==='false'?false:Number(m[2]);}return {value,parameter:true,param:m[1],required:m[2]===undefined};}
@@ -301,6 +304,8 @@
     const spec=specFor(source)[row.key];if(!spec)throw Error('Unsupported option: '+row.key);
     let v=row.value;
     if(spec.type==='number'){if(String(v).trim()===''||!Number.isFinite(Number(v))||!Number.isInteger(Number(v)))throw Error(spec.label+' needs a whole number.');v=Number(v);if(['posts_per_page','number'].includes(row.key)&&v < -1)throw Error('Count must be -1 or a nonnegative whole number.');}
+    else if(spec.type==='gridSelector'){v=String(v??'').trim();if(!/^wpgb-content-[A-Za-z0-9_-]+$/.test(v))throw Error('WP Grid Builder needs a selector such as wpgb-content-posts, without a leading dot.');}
+    else if(spec.type==='facetFlag'){if(![true,false,'true','false'].includes(v))throw Error('FacetWP requires true or false.');}
     else if(spec.type==='bool')v=v===true||v==='true'||v===1||v==='1';
     else if(['strings','ids'].includes(spec.type)){v=Array.isArray(v)?v:String(v).split(',').map(s=>s.trim()).filter(Boolean);if(spec.type==='ids')v=v.map(n=>integer(n,spec.label,0,Number.MAX_SAFE_INTEGER));if(['post_type','post_status','taxonomy','role','name'].includes(row.key)&&v.length===1&&!row.array)v=v[0];}
     else if(spec.type==='sort'){

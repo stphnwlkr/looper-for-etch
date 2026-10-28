@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Looper for Etch
  * Description: Content-aware visual query builder with PHP export and Etch Public API integration.
- * Version: 0.10.0
+ * Version: 0.11.0
  * Requires at least: 7.1
  * Requires PHP: 8.3
  * License: GPL-2.0-or-later

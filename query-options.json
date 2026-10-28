@@ -77,7 +77,9 @@
     "meta_query",
     "tax_query",
     "date_query",
-    "relationship"
+    "relationship",
+    "wp_grid_builder",
+    "facetwp"
   ],
   "wp-terms": [
     "taxonomy",

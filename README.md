@@ -17,7 +17,7 @@ Open Looper from Etch's left toolbar. Copy/paste is the default workflow; enable
 - Meta data provides stored-key/value comparisons, existence tests, casting, nested groups, and meta sorting settings.
 - Dates provides calendar boundaries, relative dates, date columns, and groups.
 - Advanced adds content selection, authors, search, pagination, hierarchy, and user roles or publication requirements as appropriate to the source. It excludes execution and database-tuning controls.
-- More provides Meta Box relationships when that extension is available.
+- More provides simple WP Grid Builder and FacetWP query arguments, plus Meta Box relationships when that extension is available. Facet wrapper classes and shortcodes are added separately in Etch.
 
 Supported sources are posts, attachments, public custom post types, taxonomy terms, users, and the inherited Main Query for archive and search templates. JSON and dynamic-data array loops remain in Etch.
 
@@ -61,7 +61,7 @@ See [validation](docs/VALIDATION.md), [accessibility](docs/ACCESSIBILITY.md), an
 
 Run `npm ci && npm test` for query, editor-action, and DOM accessibility tests. Run `php tests/updater-test.php` for updater trust-boundary tests. Integration checks require a disposable WordPress installation with Etch.
 
-Run `python3 scripts/build-release.py 0.10.0` to create the installable ZIP and update manifest under `dist/`. A pushed `vX.Y.Z` tag runs the release workflow. Runtime versions must match the tag.
+Run `python3 scripts/build-release.py 0.11.0` to create the installable ZIP and update manifest under `dist/`. A pushed `vX.Y.Z` tag runs the release workflow. Runtime versions must match the tag.
 
 GPL-2.0-or-later. This is an independent plugin and is not an official Etch product.
 
