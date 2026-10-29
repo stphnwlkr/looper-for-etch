@@ -21,6 +21,10 @@ Open Looper from Etch's left toolbar. Copy/paste is the default workflow; enable
 
 Supported sources are posts, attachments, public custom post types, taxonomy terms, users, and the inherited Main Query for archive and search templates. JSON and dynamic-data array loops remain in Etch.
 
+**Exclude current post** is available in the Query tab for post queries, including custom post types. Use **Insert loop element** or **Apply to selected loop** to connect the current post automatically. It combines with fixed excluded IDs, and cannot be combined with Include post IDs. This is intended for related content on single post/page templates. Preview uses fixed exclusions only because it has no single-post context.
+
+The saved native query uses `post__not_in` with `$exclude ?? 0`. Looper binds that argument to `this.id` on inserted/applied elements. If you only save the definition or copy its PHP, set the element's `$exclude` argument to `this.id` in Etch. Existing elements using an updated definition need that binding too. This continues working with Looper deactivated.
+
 Optional scalar arguments generate defaults such as `$count ?? 6`. Lists use fixed values. Preview uses the supplied defaults and never executes pasted PHP. The generated PHP stays visible. Copy for Etch copies only the entries inside the $query_args array, omitting the opening PHP tag, assignment and outer brackets. Paste those entries inside Etch’s existing array; this manual route does not reload the editor.
 
 Load an existing supported query to edit it. Keeping its key updates that definition; changing its key creates another. New keys use camelCase. Looper can save a definition, insert a loop element, or apply a query to the selected loop element. **Most actions update the editor without a reload; use Etch Save to keep them. If Etch’s editor API rejects a query shape, Looper offers Save changes and reload or Cancel. Confirming saves all current editor changes and the native query, then reloads. Review inserted/applied elements and use Etch Save afterward.** Updating a shared definition affects every loop that references it.
@@ -61,7 +65,7 @@ See [validation](docs/VALIDATION.md), [accessibility](docs/ACCESSIBILITY.md), an
 
 Run `npm ci && npm test` for query, editor-action, and DOM accessibility tests. Run `php tests/updater-test.php` for updater trust-boundary tests. Integration checks require a disposable WordPress installation with Etch.
 
-Run `python3 scripts/build-release.py 0.11.0` to create the installable ZIP and update manifest under `dist/`. A pushed `vX.Y.Z` tag runs the release workflow. Runtime versions must match the tag.
+Run `python3 scripts/build-release.py 0.12.0` to create the installable ZIP and update manifest under `dist/`. A pushed `vX.Y.Z` tag runs the release workflow. Runtime versions must match the tag.
 
 GPL-2.0-or-later. This is an independent plugin and is not an official Etch product.
 

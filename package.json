@@ -1,10 +1,10 @@
 {
   "name": "looper-for-etch",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
   "license": "GPL-2.0-or-later",
   "scripts": {
-    "test": "node tests/query.test.cjs && node tests/query-terms.test.cjs && node tests/main-media.test.cjs && node tests/actions.test.cjs && node tests/unified-options.test.cjs && node tests/facets.test.cjs && node tests/toolbar.test.cjs && node tests/autocomplete.test.cjs && node tests/autocomplete-settings.test.cjs"
+    "test": "node tests/query.test.cjs && node tests/query-terms.test.cjs && node tests/main-media.test.cjs && node tests/exclude-current.test.cjs && node tests/actions.test.cjs && node tests/unified-options.test.cjs && node tests/facets.test.cjs && node tests/toolbar.test.cjs && node tests/autocomplete.test.cjs && node tests/autocomplete-settings.test.cjs"
   },
   "devDependencies": {
     "axe-core": "4.14.0",

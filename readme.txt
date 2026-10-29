@@ -3,7 +3,7 @@ Contributors: stphnwlkr
 Requires at least: 7.1
 Tested up to: 7.2
 Requires PHP: 8.3
-Stable tag: 0.11.0
+Stable tag: 0.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -18,6 +18,9 @@ Distributed through GitHub releases. Updates appear in the standard WordPress Pl
 Upload the release ZIP through Plugins > Add New > Upload Plugin. Activate Looper, reload Etch, and use its left-toolbar button. Copy/paste is the default. Copy for Etch copies only the entries for the existing query-arguments array. Enable direct Etch actions in Settings to reveal save/update, insert, and apply controls. Enable optional HTML loop field suggestions separately. Most direct actions update the editor without reloading; use Etch Save. Queries rejected by Etch’s editor validation offer Save changes and reload or Cancel before any automatic save. Review inserted/applied elements after reload and use Etch Save. Older compatibility queries migrate on the next administrator visit; resolve any warning before removing Looper.
 
 == Changelog ==
+= 0.12.0 =
+Exclude current post with a native $exclude argument and automatic insert/apply binding. Place the option at the bottom of Query and move sticky promotion controls to More.
+
 = 0.11.0 =
 Simple WP Grid Builder selector and FacetWP enable controls under More, with setup guidance and saved-argument support.
 

@@ -369,15 +369,16 @@
     const panels=createQueryTabs(form),base=el('section','card');base.append(el('h2','',state.source==='main-query'?'Archive and search results':state.source==='wp-users'?'WordPress users':state.source==='wp-terms'?'Taxonomy terms query':'Query options'));
     base.append(el('p','hint','Include an option to set a value. Make it an argument to reuse the loop with different values. Lists and grouped settings use fixed values.'));
     if(state.source==='main-query')base.append(el('p','hint','Leave options unchecked to inherit the archive or search query and its pagination. Preview in the matching template.'));
-    const keys=state.source==='wp-users'?['number','orderby','order','offset','paged','role','search']:state.source==='wp-terms'?['taxonomy','number','orderby','order','offset','hide_empty','parent','search']:['posts_per_page','orderby','order','offset','post_status','ignore_sticky_posts'];
+    const keys=state.source==='wp-users'?['number','orderby','order','offset','paged','role','search']:state.source==='wp-terms'?['taxonomy','number','orderby','order','offset','hide_empty','parent','search']:['posts_per_page','orderby','order','offset','post_status'];
     base.append(settingHelp('Query settings','',sourceDocs()+'#parameters'));
     keys.forEach(key=>base.append(optionRow(key,{required:state.source==='wp-terms'&&key==='taxonomy'})));
     base.append(el('p','hint',state.source==='wp-terms'?'Count 0 returns all terms. Parent 0 selects top-level terms.':state.source==='wp-users'?'Count 0 or -1 returns all users. Offset takes precedence over page-based pagination.':'Count -1 returns all posts. Offset can interfere with pagination.'));panels.query.append(base);
+    if(state.source==='wp-query')base.append(check('Exclude current post',!!state.excludeCurrentPost,on=>{state.excludeCurrentPost=on;render();}),el('p','hint','For related content on a single post or page. Insert or apply this loop to connect the current post automatically. Preview uses fixed exclusions only.'));
     if(state.source==='wp-query'&&state.postType==='attachment')panels.query.append(attachmentOptions());
     if(!['wp-users','wp-terms'].includes(state.source)){panels.tax.append(filterGroup('tax'));const saved=savedTaxonomySettings();if(saved)panels.tax.append(saved);}
     panels.meta.append(filterGroup('meta'),metaSettings());if(panels.dates){panels.dates.append(dateOptions());const saved=savedDateSettings();if(saved)panels.dates.append(saved);}
     renderAdvancedOptions(panels.advanced);
-    if(['wp-query','main-query'].includes(state.source))panels.more.append(facetOptions(),relationshipOptions(),customQueryGuide());
+    if(['wp-query','main-query'].includes(state.source)){const sticky=el('section','card');sticky.append(el('h2','','Sticky posts'),optionRow('ignore_sticky_posts'));panels.more.append(sticky,facetOptions(),relationshipOptions(),customQueryGuide());}
   }
 
   function filterStats(rows){return (rows||[]).reduce((total,row)=>{if(row.rules){const nested=filterStats(row.rules);total.groups+=1+nested.groups;total.rules+=nested.rules;}else total.rules++;return total;},{groups:0,rules:0});}
@@ -801,7 +802,7 @@
     saveButton.textContent=busy?'Working…':labels[actionMode];
     saveButton.disabled=!!nativeSaveOperation||!enabled||runtimeMissing||(actionMode==='definition'&&same)||(actionMode==='create'&&typeof api?.blocks?.create!=='function')||(actionMode==='bind'&&(!!selectionProblem||typeof api?.loops?.setForBlock!=='function'));
     actionSelect.disabled=busy||loadingLoop;
-    const help={definition:'Adds or updates the query in Etch’s Loop Manager. It does not add content to the page.',create:'Adds a new loop to the page with starter title and link content, using this query.',bind:'Applies to the exact loop element selected in Etch, including an inner or outer loop. Its content, variable names, and argument overrides are kept. Supports WP Query, WP Terms, WP Users, and Main Query, not JSON.'};
+    const help={definition:'Adds or updates the query in Etch’s Loop Manager. It does not add content to the page.'+(state.excludeCurrentPost?' To exclude the current post, use Insert loop element or Apply to selected loop, or set the loop argument $exclude to this.id in Etch.':''),create:'Adds a new loop to the page with starter title and link content, using this query.',bind:'Applies to the exact loop element selected in Etch, including an inner or outer loop. Its content, variable names, and argument overrides are kept. Supports WP Query, WP Terms, WP Users, and Main Query, not JSON.'};
     let detail=help[actionMode];if(keyPending)detail+=' Checking existing query keys before creating a new one. If discovery fails, use Refresh loops.';
     if(existing)detail+=(same?' The existing definition will be reused.':' This key already exists. Updating it changes every loop that uses this definition.');
     if(actionMode==='definition'&&same)detail='This query is already in the Loop Manager. Choose Insert new loop element or Apply query to selected loop to use it.';
@@ -817,15 +818,17 @@
   const pendingActionKey='looper-native-action:'+location.href;
   const loopBinding=block=>Object.fromEntries(['type','loopId','target','itemId','indexId','loopParams'].filter(key=>Object.hasOwn(block||{},key)).map(key=>[key,block[key]]));
   function insertOrBind(api,mode,loopId,type,name,selected,binding){
+    const currentPost=type==='wp-query'&&api.loops.getAll?.()[loopId]?.config?.args?.post__not_in?.includes(Q.currentPostParam);
+    const params={...(binding?.loopParams||{})};if(currentPost)params['$exclude']='this.id';
     if(mode==='bind'){
       const current=api.blocks.getJson(selected);
       if(!current||!equal(loopBinding(current),binding))throw Error('The selected element changed. Select the intended loop and apply the saved query again.');
       const problem=selectedLoopProblem(api,current);if(problem)throw Error(problem);
-      api.loops.setForBlock(selected,{loopId,target:'',itemId:binding.itemId||'item',indexId:binding.indexId||'index',loopParams:binding.loopParams||{}});
+      api.loops.setForBlock(selected,{loopId,target:'',itemId:binding.itemId||'item',indexId:binding.indexId||'index',loopParams:params});
     }
     if(mode==='create'){
       const text={type:'etch/text',version:1,context:{},children:[],text:type==='wp-users'?'{item.displayName}':type==='wp-terms'?'{item.name}':'{item.title}'};
-      const id=api.blocks.create({type:'etch/loop',version:1,context:{name},children:[{type:'etch/element',version:1,context:{name:'Loop item'},tag:type==='wp-terms'?'div':'article',attributes:{},children:[{type:'etch/element',version:1,context:{},tag:'h2',attributes:{},children:[{type:'etch/element',version:1,context:{},tag:'a',attributes:{href:type==='wp-users'?'{item.userUrl}':type==='wp-terms'?'{item.permalink}':'{item.permalink.relative}'},children:[text]}]}]}],itemId:'item',indexId:'index',loopId},null);
+      const id=api.blocks.create({type:'etch/loop',version:1,context:{name},children:[{type:'etch/element',version:1,context:{name:'Loop item'},tag:type==='wp-terms'?'div':'article',attributes:{},children:[{type:'etch/element',version:1,context:{},tag:'h2',attributes:{},children:[{type:'etch/element',version:1,context:{},tag:'a',attributes:{href:type==='wp-users'?'{item.userUrl}':type==='wp-terms'?'{item.permalink}':'{item.permalink.relative}'},children:[text]}]}]}],itemId:'item',indexId:'index',loopId,...(currentPost?{loopParams:params}:{})},null);
       api.blocks.select(id);
     }
   }

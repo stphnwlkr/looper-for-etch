@@ -1,5 +1,21 @@
 [
   {
+    "version": "0.12.0",
+    "summary": "Exclude the current post from related-content queries.",
+    "changes": {
+      "added": [
+        "Exclude current post option for post and custom post type queries, using the native $exclude argument.",
+        "Automatically bind $exclude to this.id when inserting or applying a loop, while preserving other loop arguments.",
+        "Preserve fixed excluded IDs when saving and reopening current-post exclusions; reject conflicting Include post IDs."
+      ],
+      "changed": [
+        "Place Exclude current post at the bottom of Query options.",
+        "Move Ignore sticky promotion to the More tab.",
+        "Explain the dynamic argument connection needed when copying PHP or saving only a query definition."
+      ]
+    }
+  },
+  {
     "version": "0.11.0",
     "summary": "Simple WP Grid Builder and FacetWP query controls.",
     "changes": {
