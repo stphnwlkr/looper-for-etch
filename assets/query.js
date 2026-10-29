@@ -356,6 +356,12 @@
     const c={};for(const[k,v]of Object.entries(row)){if(['','name','queryKey','afterMode','beforeMode'].includes(k)||v===''||v===undefined)continue;if(!allowed.includes(k))throw Error('Unsupported date setting: '+k);if(['after','before','column','compare'].includes(k)||typeof v==='boolean'||Array.isArray(v)||typeof v==='object')c[k]=v;else c[k]=integer(v,'Date '+k,0,9999);}if(!Object.keys(c).some(k=>!['column','compare','inclusive'].includes(k)))throw Error('Set a date or date part for each date rule.');group[row.queryKey??row.name??i]=c;});return group;}
   function loadDates(group){return Object.entries(group||{}).filter(([k])=>k!=='relation').map(([name,row])=>row.relation||Object.keys(row).some(k=>/^\d+$/.test(k))?{queryKey:name,name:/^\d+$/.test(name)?undefined:name,relation:row.relation||'AND',rules:loadDates(row)}:{...row,queryKey:name,name:/^\d+$/.test(name)?undefined:name});}
   const currentPostParam='$exclude ?? 0';
+  function currentPostArgument(args){
+    const values=args?.post__not_in;if(!Array.isArray(values))return null;
+    const dynamic=values.map((value,index)=>({value,index})).filter(row=>typeof row.value==='string'&&row.value.trim().startsWith('$'));
+    if(dynamic.length!==1)return null;
+    const row=dynamic[0];try{const parsed=literal(row.value.trim());if(!parsed.parameter||parsed.required||parsed.value!==0)return null;return {name:parsed.param,expression:row.value,index:row.index};}catch(_){return null;}
+  }
   function expandedInitial(){return {...initial(),excludeCurrentPost:false,advanced:[],dates:[],dateRelation:'AND',relationship:{enabled:false,id:'',direction:'from',value:0,parameter:false,param:'relatedID'},userOptions:{number:{enabled:true,value:6,parameter:false,param:'count'},orderby:{enabled:true,value:'display_name',parameter:false,param:'orderby'},order:{enabled:true,value:'ASC',parameter:false,param:'order'},offset:{enabled:false,value:0,parameter:false,param:'offset'},paged:{enabled:false,value:1,parameter:false,param:'paged'},role:{enabled:false,value:'',parameter:false,param:'role'},search:{enabled:false,value:'',parameter:false,param:'search'}}};}
   function expandedCompile(state){
     let r;if(state.source==='wp-users'){r={type:'wp-users',args:{},native:{}};for(const[key,row]of Object.entries(state.userOptions||{})){if(!row.enabled)continue;const value=parseOption({...row,key},state.source);r.args[key]=value;r.native[key]=expression({...row,param:row.param||key},value);}}
@@ -369,7 +375,9 @@
     if(state.excludeCurrentPost&&state.source==='wp-query'){
       if(r.args.post__in?.length)throw Error('Exclude current post cannot be combined with Include post IDs.');
       const fixed=r.args.post__not_in||[];if(!Array.isArray(fixed)||fixed.some(v=>!Number.isSafeInteger(v)))throw Error('Use fixed post IDs alongside Exclude current post.');
-      r.args.post__not_in=[...fixed];r.native.post__not_in=[...fixed,currentPostParam];
+      const saved=state.currentPostExclusion,exclusion=saved?.expression||currentPostParam;
+      if(!currentPostArgument({post__not_in:[exclusion]}))throw Error('Use an exclusion argument with a default of 0.');
+      r.args.post__not_in=[...fixed];r.native.post__not_in=[...fixed];r.native.post__not_in.splice(Math.min(saved?.index??fixed.length,fixed.length),0,exclusion);
     }
     if(state.relationship?.enabled){if(!['wp-query','main-query'].includes(state.source))throw Error('Relationships require a post query.');const row=state.relationship;if(!row.id.trim())throw Error('Enter a registered Meta Box relationship ID.');const value=integer(row.value,'Related object ID',0,Number.MAX_SAFE_INTEGER);r.args.relationship={id:row.id.trim(),[row.direction]:value};r.native.relationship={id:row.id.trim(),[row.direction]:expression(row,value)};}
     if(state.source==='wp-users'&&!Object.keys(r.args).length)r.args.number=r.native.number=6;
@@ -385,13 +393,13 @@
     const args=decodeExpanded(loop.config.args),source=loop.config.type;if(!args||Array.isArray(args)||typeof args!=='object')throw Error('Invalid query arguments.');
     if('post_offset'in args)throw Error('post_offset is not a WordPress query argument; use offset instead.');
     // Use the original importer for existing simple definitions to preserve every legacy detail.
-    try{if(args.post__not_in?.includes?.(currentPostParam))throw Error('Use current post controls');if(args.post_type==='any')throw Error('Use multi-type controls');const old=loadDefinition({...loop,config:{type:source,args}});return {...expandedInitial(),...old};}catch(_){}
+    try{if(currentPostArgument(args))throw Error('Use current post controls');if(args.post_type==='any')throw Error('Use multi-type controls');const old=loadDefinition({...loop,config:{type:source,args}});return {...expandedInitial(),...old};}catch(_){}
     let state=expandedInitial();state.source=source;state.name=loop.name||loop.key;state.key=loop.key;state.global=!!loop.global;state.ignoreSticky=false;
     Object.values(state.options).forEach(o=>o.enabled=false);Object.values(state.termOptions).forEach(o=>o.enabled=false);Object.values(state.userOptions).forEach(o=>o.enabled=false);
     if(source==='wp-query')state.postType=Array.isArray(args.post_type)?args.post_type[0]:typeof args.post_type==='string'&&!args.post_type.startsWith('$')&&args.post_type!=='any'?args.post_type:'post';
     if(source==='wp-terms'){state.termOptions.taxonomy.enabled=true;state.termOptions.taxonomy.value=Array.isArray(args.taxonomy)?args.taxonomy[0]:literal(args.taxonomy||'').value;}
     for(const[key,v]of Object.entries(args)){
-      if(source==='wp-query'&&key==='post__not_in'&&Array.isArray(v)&&v.at(-1)===currentPostParam){state.excludeCurrentPost=true;const fixed=v.slice(0,-1);if(fixed.length)state.advanced.push({key,value:fixed,array:true});continue;}
+      if(source==='wp-query'&&key==='post__not_in'&&currentPostArgument(args)){state.excludeCurrentPost=true;state.currentPostExclusion=currentPostArgument(args);const fixed=v.filter((_,index)=>index!==state.currentPostExclusion.index);if(fixed.length)state.advanced.push({key,value:fixed,array:true});continue;}
       if(['tax_query','meta_query'].includes(key)){const kind=key==='tax_query'?'tax':'meta';state[kind]=loadFilter(v,kind);state[kind+'Relation']=v.relation||'AND';continue;}
       if(key==='date_query'){state.dates=loadDates(v);state.dateRelation=v.relation||'AND';continue;}
       if(key==='relationship'){if(!v||typeof v!=='object'||!('from'in v)&&!('to'in v))throw Error('A relationship requires from or to.');const dir='from'in v?'from':'to';if(Object.keys(v).some(k=>!['id',dir].includes(k)))throw Error('This relationship has unsupported settings.');state.relationship={enabled:true,id:v.id,direction:dir,...literal(v[dir]),value:literal(v[dir]).required?0:literal(v[dir]).value,param:literal(v[dir]).param||'relatedID'};continue;}
@@ -417,7 +425,7 @@
     return result.php.slice('$query_args = [\n'.length,-'\n];'.length).split('\n').map(line=>line.startsWith('  ')?line.slice(2):line).join('\n');
   }
 
-  const api = { compile:expandedCompile, initial:expandedInitial, loadDefinition:expandedLoad, apiArgs:expandedApiArgs, decodeApiArgs:decodeExpanded, basics, termBasics, catalog, sortFields, literal, etchBody, currentPostParam };
+  const api = { compile:expandedCompile, initial:expandedInitial, loadDefinition:expandedLoad, apiArgs:expandedApiArgs, decodeApiArgs:decodeExpanded, basics, termBasics, catalog, sortFields, literal, etchBody, currentPostParam, currentPostArgument };
   if (typeof module !== 'undefined') module.exports = api;
   root.LooperQuery = api;
 })(typeof window !== 'undefined' ? window : globalThis);

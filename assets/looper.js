@@ -374,6 +374,7 @@
     keys.forEach(key=>base.append(optionRow(key,{required:state.source==='wp-terms'&&key==='taxonomy'})));
     base.append(el('p','hint',state.source==='wp-terms'?'Count 0 returns all terms. Parent 0 selects top-level terms.':state.source==='wp-users'?'Count 0 or -1 returns all users. Offset takes precedence over page-based pagination.':'Count -1 returns all posts. Offset can interfere with pagination.'));panels.query.append(base);
     if(state.source==='wp-query')base.append(check('Exclude current post',!!state.excludeCurrentPost,on=>{state.excludeCurrentPost=on;render();}),el('p','hint','For related content on a single post or page. Insert or apply this loop to connect the current post automatically. Preview uses fixed exclusions only.'));
+    if(state.source==='wp-query'&&state.excludeCurrentPost&&state.currentPostExclusion)base.append(el('p','hint','Exclusion argument: $'+state.currentPostExclusion.name+'. The saved argument name is preserved.'));
     if(state.source==='wp-query'&&state.postType==='attachment')panels.query.append(attachmentOptions());
     if(!['wp-users','wp-terms'].includes(state.source)){panels.tax.append(filterGroup('tax'));const saved=savedTaxonomySettings();if(saved)panels.tax.append(saved);}
     panels.meta.append(filterGroup('meta'),metaSettings());if(panels.dates){panels.dates.append(dateOptions());const saved=savedDateSettings();if(saved)panels.dates.append(saved);}
@@ -802,7 +803,7 @@
     saveButton.textContent=busy?'Working…':labels[actionMode];
     saveButton.disabled=!!nativeSaveOperation||!enabled||runtimeMissing||(actionMode==='definition'&&same)||(actionMode==='create'&&typeof api?.blocks?.create!=='function')||(actionMode==='bind'&&(!!selectionProblem||typeof api?.loops?.setForBlock!=='function'));
     actionSelect.disabled=busy||loadingLoop;
-    const help={definition:'Adds or updates the query in Etch’s Loop Manager. It does not add content to the page.'+(state.excludeCurrentPost?' To exclude the current post, use Insert loop element or Apply to selected loop, or set the loop argument $exclude to this.id in Etch.':''),create:'Adds a new loop to the page with starter title and link content, using this query.',bind:'Applies to the exact loop element selected in Etch, including an inner or outer loop. Its content, variable names, and argument overrides are kept. Supports WP Query, WP Terms, WP Users, and Main Query, not JSON.'};
+    const help={definition:'Adds or updates the query in Etch’s Loop Manager. It does not add content to the page.'+(state.excludeCurrentPost?' To exclude the current post, use Insert loop element or Apply to selected loop, or set the loop argument $'+(state.currentPostExclusion?.name||'exclude')+' to this.id in Etch.':''),create:'Adds a new loop to the page with starter title and link content, using this query.',bind:'Applies to the exact loop element selected in Etch, including an inner or outer loop. Its content, variable names, and argument overrides are kept. Supports WP Query, WP Terms, WP Users, and Main Query, not JSON.'};
     let detail=help[actionMode];if(keyPending)detail+=' Checking existing query keys before creating a new one. If discovery fails, use Refresh loops.';
     if(existing)detail+=(same?' The existing definition will be reused.':' This key already exists. Updating it changes every loop that uses this definition.');
     if(actionMode==='definition'&&same)detail='This query is already in the Loop Manager. Choose Insert new loop element or Apply query to selected loop to use it.';
@@ -818,8 +819,8 @@
   const pendingActionKey='looper-native-action:'+location.href;
   const loopBinding=block=>Object.fromEntries(['type','loopId','target','itemId','indexId','loopParams'].filter(key=>Object.hasOwn(block||{},key)).map(key=>[key,block[key]]));
   function insertOrBind(api,mode,loopId,type,name,selected,binding){
-    const currentPost=type==='wp-query'&&api.loops.getAll?.()[loopId]?.config?.args?.post__not_in?.includes(Q.currentPostParam);
-    const params={...(binding?.loopParams||{})};if(currentPost)params['$exclude']='this.id';
+    const currentPost=type==='wp-query'&&Q.currentPostArgument(api.loops.getAll?.()[loopId]?.config?.args);
+    const params={...(binding?.loopParams||{})};if(currentPost)params['$'+currentPost.name]='this.id';
     if(mode==='bind'){
       const current=api.blocks.getJson(selected);
       if(!current||!equal(loopBinding(current),binding))throw Error('The selected element changed. Select the intended loop and apply the saved query again.');

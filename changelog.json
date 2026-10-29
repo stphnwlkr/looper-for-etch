@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.12.1",
+    "summary": "Preserve alternate exclusion argument names when reopening queries.",
+    "changes": {
+      "fixed": [
+        "Recognize exclusions such as $exc ?? 0 instead of treating the argument as a fixed numeric post ID.",
+        "Preserve the exclusion argument name, spacing and position among fixed excluded IDs when reopening and updating a query.",
+        "Bind the existing exclusion argument name when applying or inserting an imported query."
+      ],
+      "changed": [
+        "Show the imported exclusion argument name in Query options.",
+        "Add regression checks that unrelated fixed-ID query definitions remain unchanged during update, insert and apply actions."
+      ]
+    }
+  },
+  {
     "version": "0.12.0",
     "summary": "Exclude the current post from related-content queries.",
     "changes": {
