@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.12.2",
+    "summary": "Fix compact dropdown styling in Safari.",
+    "changes": {
+      "fixed": [
+        "Give dropdowns the same height and chevron as the rest of the editor controls in Safari."
+      ]
+    }
+  },
+  {
     "version": "0.12.1",
     "summary": "Preserve alternate exclusion argument names when reopening queries.",
     "changes": {
